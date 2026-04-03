@@ -1,0 +1,48 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# ==========================================
+# Herramientas de IA y Skills Locales
+# ==========================================
+.agents/skills/
+skills-lock.json
+
+# ==========================================
+# Archivos de Contexto Privados y Reportes
+# ==========================================
+# Ignora todos los reportes de auditoría ejecutiva
+AUDITORIA_EJECUTIVA_AZURE_*.md
+
+# Ignora todos los documentos PDF (como el informe del motor de pagos)
+*.pdf
