@@ -60,6 +60,7 @@
 			<version>1.5.5.Final</version>
 			<scope>provided</scope>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
@@ -77,6 +78,11 @@
         <artifactId>spring-boot-docker-compose</artifactId>
         <optional>true</optional>
    	 	</dependency>
+		<dependency>
+			<groupId>com.warrenstrange</groupId>
+			<artifactId>googleauth</artifactId>
+			<version>1.4.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
