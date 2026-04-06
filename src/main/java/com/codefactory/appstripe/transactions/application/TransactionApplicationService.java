@@ -22,8 +22,14 @@ public class TransactionApplicationService {
     }
 
     public Transaction assignInitialStatusCreated(Transaction transaction){
-        // El estado inicial es CREATED con anterioridad
-        return transactionRepositoryPort.save(transaction);
+        // Guardar en base de datos
+        Transaction savedTransaction = transactionRepositoryPort.save(transaction);
+
+        // Guardar en auditoría
+        auditPublisherPort.publishStatusChange(savedTransaction.getId(), null, savedTransaction.getStatus());
+
+        //Retornar la transacción guardada
+        return savedTransaction;
     }
 
     public void startProcessing(String transactionId){
