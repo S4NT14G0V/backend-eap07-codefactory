@@ -2,7 +2,9 @@ package com.codefactory.appstripe.security.aplication;
 
 import com.codefactory.appstripe.security.aplication.port.TwoFactorPort;
 import com.codefactory.appstripe.security.domain.User;
+import org.springframework.stereotype.Service;
 
+@Service
 public class TwoFactorService {
 
     private final TwoFactorPort twoFactorPort;
