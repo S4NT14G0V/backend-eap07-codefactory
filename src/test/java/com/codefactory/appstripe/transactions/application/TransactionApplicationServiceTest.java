@@ -5,6 +5,7 @@ import com.codefactory.appstripe.transactions.application.port.ITransactionRepos
 import com.codefactory.appstripe.transactions.domain.Transaction;
 import com.codefactory.appstripe.transactions.domain.TransactionStatus;
 import com.codefactory.appstripe.transactions.domain.exception.InvalidTransactionStateException;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,6 +37,7 @@ class TransactionApplicationServiceTest {
 
     // ESCENARIO 1: Transición válida
     @Test
+    @DisplayName("Criterio 1: Transición válida de CREATED a PROCESSING")
     void shouldStartProcessing_SaveAuditAndNotify_WhenTransactionIsValid() {
         // Arrange
         String transactionId = "uuid-1234";
@@ -70,6 +72,7 @@ class TransactionApplicationServiceTest {
 
     // ESCENARIO 2: Transición no valida
     @Test
+    @DisplayName("Criterio 2: Bloquear operación y lanzar excepción si la transacción ya está en estado final")
     void shouldBlockOperationAndThrowException_WhenTransactionIsInFinalState() {
         // Arrange
         String transactionId = "uuid-1234";
