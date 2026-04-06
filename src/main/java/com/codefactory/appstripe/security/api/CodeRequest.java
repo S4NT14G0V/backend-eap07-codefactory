@@ -3,6 +3,7 @@ package com.codefactory.appstripe.security.api;
 import java.util.Objects;
 
 import lombok.Data;
+import com.codefactory.appstripe.security.domain.User;
 
 @Data
 public class CodeRequest {
@@ -19,6 +20,10 @@ public class CodeRequest {
 
     public String getUsername() {
         return this.username;
+    }
+
+    public User getUser() {
+        return new User(this.username, "");
     }
 
     public void setUsername(String username) {
