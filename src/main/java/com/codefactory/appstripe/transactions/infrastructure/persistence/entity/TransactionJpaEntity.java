@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 public class TransactionJpaEntity {
 
     @Id
-    // aun es necesario crear el generador de id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "merchant_id", nullable = false)
