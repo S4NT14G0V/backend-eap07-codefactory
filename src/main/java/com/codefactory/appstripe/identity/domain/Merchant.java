@@ -14,5 +14,6 @@ public class Merchant {
     private String businessName;
     private String businessId; // NIT o RUT
     private String email;
+    private String businessType;
     private MerchantStatus status; // Aquí usamos el Enum que creamos antes
 }

@@ -1,19 +1,17 @@
-version: '3.8'
-
 services:
   mysql-db:
     image: mysql:8.0
     container_name: appstripe-mysql
-    # Configuración de variables de entorno para inicializar la BD
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: appstripe_db
       MYSQL_USER: codefactory
       MYSQL_PASSWORD: apppassword
-    # Mapeo de puertos: El 3306 de tu computadora se conecta al 3306 del contenedor
     ports:
-      - "3306:3306"
-    # Volumen para que los datos no se borren si apagas el contenedor
+      - "3406:3306"
+    # ESTA ES LA ETIQUETA QUE OBLIGA A SPRING BOOT A USAR LOS PARÁMETROS CORRECTOS
+    labels:
+      org.springframework.boot.jdbc.parameters: "allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
     volumes:
       - mysql_data:/var/lib/mysql
 

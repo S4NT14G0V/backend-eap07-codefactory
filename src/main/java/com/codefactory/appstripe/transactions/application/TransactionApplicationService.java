@@ -14,31 +14,32 @@ public class TransactionApplicationService {
     private final IMerchantNotifierPort merchantNotifierPort;
 
     public TransactionApplicationService(ITransactionRepositoryPort transactionRepositoryPort,
-                                         IAuditPublisherPort auditPublisherPort,
-                                         IMerchantNotifierPort merchantNotifierPort) {
+            IAuditPublisherPort auditPublisherPort,
+            IMerchantNotifierPort merchantNotifierPort) {
         this.transactionRepositoryPort = transactionRepositoryPort;
         this.auditPublisherPort = auditPublisherPort;
         this.merchantNotifierPort = merchantNotifierPort;
     }
 
-    public Transaction assignInitialStatusCreated(Transaction transaction){
+    public Transaction assignInitialStatusCreated(Transaction transaction) {
         // Guardar en base de datos
         Transaction savedTransaction = transactionRepositoryPort.save(transaction);
 
         // Guardar en auditoría
         auditPublisherPort.publishStatusChange(savedTransaction.getId(), null, savedTransaction.getStatus());
 
-        //Retornar la transacción guardada
+        // Retornar la transacción guardada
         return savedTransaction;
     }
 
-    public void startProcessing(String transactionId){
-        Transaction transaction = transactionRepositoryPort.findById(transactionId).orElseThrow(()->new RuntimeException("Transacción no encontrada con ID: " + transactionId));
+    public void startProcessing(String transactionId) {
+        Transaction transaction = transactionRepositoryPort.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transacción no encontrada con ID: " + transactionId));
 
         // guardar el estado anterior u old
         TransactionStatus oldStatus = transaction.getStatus();
 
-        //procesar el pago
+        // procesar el pago
         transaction.startProcessing();
 
         // guardar en base de datos
@@ -49,6 +50,11 @@ public class TransactionApplicationService {
 
         // notificar procesamiento al comercio
         merchantNotifierPort.notifyProcessingStart(transaction);
+    }
+
+    public Transaction getById(String transactionId) {
+        return transactionRepositoryPort.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transacción no encontrada con ID: " + transactionId));
     }
 
 }

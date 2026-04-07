@@ -10,5 +10,8 @@ public interface ICommerceRepositoryPort {
 
     // Otros métodos que pide tu documentación para la HU1
     Merchant save(Merchant merchant);
+
     boolean existsByBusinessId(String businessId);
+
+    boolean existsByEmail(String email);
 }

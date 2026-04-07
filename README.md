@@ -1,95 +1,46 @@
 # AppStripe - Motor de Pagos Embebidos (Caso 8)
 
-Plataforma de pagos B2B tipo Stripe orientada a exponer APIs seguras para que aplicaciones externas puedan crear, validar y trazar transacciones de pago.
+Backend Spring Boot para una plataforma de pagos B2B estilo Stripe, construido como monolito modular por dominios.
 
-Este repositorio contiene el backend principal en Spring Boot bajo un enfoque de monolito modular, con separacion estricta por dominios.
+## Estado actual (real del repo)
 
-## Objetivo del proyecto
+Implementado y funcional:
 
-Construir un motor de pagos embebidos que permita:
+- HU001: Registro de comercio por API.
+- HU002: Generacion de credenciales API por comercio.
+- HU003: Creacion y consulta de transacciones.
+- HU004: Estado inicial de transaccion en `CREATED`.
+- Contrato de errores estandarizado (`errorCode`, `message`, `details`, `traceId`).
+- Persistencia en MySQL por JPA (`merchants`, `api_credentials`, `transactions`, `users`).
 
-- Registrar y gestionar comercios B2B.
-- Emitir y validar credenciales seguras de acceso a API.
-- Procesar transacciones con reglas de negocio y estado controlado.
-- Asegurar trazabilidad y observabilidad para auditoria.
+Pendiente:
 
-## Alcance funcional
+- Integrar validacion obligatoria de API credentials en endpoints de transacciones.
+- Endpoints de MFA completos orientados a flujo productivo.
+- Auditoria persistente (hoy hay partes en modo stub/log).
 
-### Dominios del sistema
+## APIs expuestas
 
-1. Identidad y Comercios.
-2. Transacciones (motor de pagos).
-3. Auditoria y Observabilidad.
+| Metodo | Ruta | Descripcion |
+|---|---|---|
+| POST | `/api/v1/merchants` | Registra comercio (MVP actual lo deja en `VERIFIED`) |
+| POST | `/api/v1/credentials/generate` | Genera credenciales para un comercio |
+| POST | `/api/v1/transactions` | Crea transaccion en estado `CREATED` |
+| GET | `/api/v1/transactions/{id}` | Consulta transaccion por id |
+| POST | `/2fa/verify` | Verifica codigo 2FA (flujo tecnico actual) |
 
-### Decisiones base confirmadas
+## Flujo demo end-to-end
 
-- Arquitectura: monolito modular.
-- Persistencia: MySQL.
-- Seguridad de APIs transaccionales: API Key + Secret hash.
-- MFA para accesos sensibles: Email OTP.
-- Estado inicial de una transaccion en Sprint 1: CREATED.
+1. Registrar comercio: `POST /api/v1/merchants`
+2. Generar credenciales: `POST /api/v1/credentials/generate`
+3. Crear transaccion: `POST /api/v1/transactions`
+4. Consultar transaccion: `GET /api/v1/transactions/{id}`
 
 ## Arquitectura y documentacion
 
-Diagramas disponibles:
-
-- Contexto C4 (Nivel 1): [docs/architecture/c4-context.md](docs/architecture/c4-context.md)
-- Contenedores C4 (Nivel 2): [docs/architecture/c4-containers.md](docs/architecture/c4-containers.md)
-- Vistas iniciales Sprint 1 (paquetes + componentes + interfaces): [docs/architecture/sprint1-package-and-components.md](docs/architecture/sprint1-package-and-components.md)
-
-## Enfoque de implementacion
-
-El proyecto se aborda por incrementos, priorizando arquitectura limpia, seguridad y trazabilidad desde el inicio.
-
-### Sprint 1 - Fundaciones arquitectonicas y seguridad base
-
-Historias objetivo: HU001 a HU006.
-
-Entregables clave:
-
-- Registro de comercio.
-- Generacion de credenciales API.
-- Creacion de transaccion.
-- Asignacion de estado inicial CREATED.
-- MFA por Email OTP.
-- Validacion de credenciales por solicitud.
-
-### Sprint 2 - Maduracion del flujo transaccional
-
-Foco esperado:
-
-- Integracion con Sandbox Mock.
-- Despliegue y hardening operativo.
-- Evolucion de estados y consistencia transaccional.
-
-### Sprint 3 - Consolidacion y observabilidad avanzada
-
-Foco esperado:
-
-- Auditoria reforzada.
-- Reporteria y tableros.
-- Cierre de calidad, pruebas y estabilizacion final.
-
-## Principios tecnicos del repositorio
-
-- Separacion por capas y por dominio.
-- Contratos claros entre aplicacion y adaptadores.
-- Manejo de errores estandarizado (`errorCode`, `message`, `details`, `traceId`).
-- Validacion estricta de payloads.
-- Pruebas unitarias con patron AAA.
-
-## Estructura actual
-
-```text
-src/
-	main/
-		java/com/codefactory/appstripe/
-		resources/
-	test/
-		java/com/codefactory/appstripe/
-docs/
-	architecture/
-```
+- Contexto C4: [docs/architecture/c4-context.md](docs/architecture/c4-context.md)
+- Contenedores C4: [docs/architecture/c4-containers.md](docs/architecture/c4-containers.md)
+- Vista Sprint 1 (objetivo + estado implementado): [docs/architecture/sprint1-package-and-components.md](docs/architecture/sprint1-package-and-components.md)
 
 ## Stack tecnologico
 
@@ -98,16 +49,28 @@ docs/
 - Spring Web
 - Spring Data JPA
 - Bean Validation
+- MySQL 8 (Docker Compose)
 - Maven Wrapper
 
 ## Como ejecutar el proyecto
 
 ### Prerrequisitos
 
+- Docker Desktop
 - JDK 17+
-- Maven (opcional, se recomienda wrapper)
 
-### Ejecucion local
+### 1) Levantar MySQL
+
+```bash
+docker compose up -d mysql-db
+```
+
+Notas:
+
+- El contenedor MySQL se publica en el puerto host `3406` para evitar conflictos locales.
+- La app conecta por `jdbc:mysql://127.0.0.1:3406/appstripe_db`.
+
+### 2) Levantar la API
 
 Windows:
 
@@ -121,7 +84,7 @@ Linux/macOS:
 ./mvnw spring-boot:run
 ```
 
-### Ejecutar pruebas
+### 3) Ejecutar pruebas
 
 Windows:
 
@@ -135,9 +98,22 @@ Linux/macOS:
 ./mvnw test
 ```
 
-## Estado actual
+## Estructura
 
-Actualmente el repositorio contiene la base del proyecto y la documentacion arquitectonica inicial para guiar la construccion del backend por sprints.
+```text
+src/
+	main/
+		java/com/codefactory/appstripe/
+			identity/
+			security/
+			transactions/
+			common/
+		resources/
+	test/
+		java/com/codefactory/appstripe/
+docs/
+	architecture/
+```
 
 ## Equipo
 

@@ -1,13 +1,16 @@
-# Sprint 1 - Package and Component Views (Initial Architecture)
+# Sprint 1 - Package and Component Views
 
-Alcance estricto Sprint 1: HU001, HU002, HU003, HU004, HU005, HU006.
+Este documento muestra dos capas de verdad:
 
-Decisiones confirmadas:
-- Estado inicial de pago: CREATED.
+1. Arquitectura objetivo de Sprint 1 (HU001-HU006).
+2. Estado implementado actual del repositorio.
+
+Decisiones confirmadas del sprint:
+
+- Estado inicial de pago: `CREATED`.
 - MFA: Email OTP.
-- Seguridad transaccional: API Key + Secret hash.
-- Dashboards: externos, sin detalle interno.
-- Convencion de puertos/adaptadores: application.port e infrastructure.adapter.
+- Seguridad transaccional objetivo: API Key + Secret hash.
+- Convencion de puertos/adaptadores: `application.port` e `infrastructure.adapter`.
 
 ## Package Diagram (Sprint 1)
 
@@ -84,7 +87,7 @@ flowchart TB
   TX_APP --> SH_AUDIT
 ```
 
-## Component Diagram with Interfaces (Sprint 1)
+## Component Diagram with Interfaces (Objetivo Sprint 1)
 
 ```mermaid
 flowchart LR
@@ -180,7 +183,7 @@ flowchart LR
 | IApiKeyGeneratorGatewayPort | identity | Generador y hash seguro de credenciales | generateApiKey, generateSecret, hashSecret |
 | IEmailOtpGatewayPort | security | Envio de OTP por correo | sendOtpEmail |
 
-## Traceability HU -> Components
+## Traceability HU -> Components (Objetivo)
 
 - HU001 Registro de comercio: CommerceController -> ICommerceApplicationService -> ICommerceRepositoryPort.
 - HU002 Credenciales API: CredentialController -> ICredentialApplicationService -> IApiCredentialRepositoryPort + IApiKeyGeneratorGatewayPort.
@@ -188,3 +191,31 @@ flowchart LR
 - HU004 Estado inicial CREATED: TransactionApplicationService.assignInitialStatusCreated.
 - HU005 MFA Email OTP: MfaController -> IMfaApplicationService -> IMfaChallengeRepositoryPort + IEmailOtpGatewayPort.
 - HU006 Validacion por solicitud: CredentialValidationFilter/TransactionController -> ICredentialValidationService -> IApiCredentialRepositoryPort.
+
+## Estado implementado actual
+
+Componentes implementados:
+
+- `CommerceController` (`POST /api/v1/merchants`)
+- `CredentialController` (`POST /api/v1/credentials/generate`)
+- `TransactionController` (`POST /api/v1/transactions`, `GET /api/v1/transactions/{id}`)
+- `AuthController` (`POST /2fa/verify`)
+- `CommerceApplicationService`, `CredentialApplicationService`, `TransactionApplicationService`, `TwoFactorService`
+- Adapters y repositorios JPA para `merchants`, `api_credentials`, `transactions`
+- Contrato global de errores (`GlobalExceptionHandler`, `ErrorResponse`)
+
+Brechas activas frente al objetivo:
+
+- Aun no se aplica validacion de API credential en endpoints de transacciones.
+- No hay `CredentialValidationFilter` activo en runtime.
+- MFA productivo completo (challenge por email OTP) no esta cerrado end-to-end.
+
+## APIs actuales del backend
+
+| Metodo | Ruta | Estado |
+|---|---|---|
+| POST | `/api/v1/merchants` | Activa |
+| POST | `/api/v1/credentials/generate` | Activa |
+| POST | `/api/v1/transactions` | Activa |
+| GET | `/api/v1/transactions/{id}` | Activa |
+| POST | `/2fa/verify` | Activa |
