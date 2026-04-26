@@ -1,8 +1,8 @@
 package com.codefactory.appstripe.security.aplication;
 
-import com.codefactory.appstripe.security.aplication.port.TwoFactorPort;
-import com.codefactory.appstripe.security.domain.User;
 import org.springframework.stereotype.Service;
+
+import com.codefactory.appstripe.security.aplication.port.TwoFactorPort;
 
 @Service
 public class TwoFactorService {
@@ -13,8 +13,12 @@ public class TwoFactorService {
         this.twoFactorPort = twoFactorPort;
     }
 
-    public boolean verifyCode(User user, int code) {
-        return twoFactorPort.verify(user.getTwoFactorSecret(), code);
+    public String generateSecret() {
+        return twoFactorPort.generateSecret();
+    }
+
+    public boolean verifyCode(String twoFactorSecret, int code) {
+        return twoFactorPort.verify(twoFactorSecret, code);
     }
 }
 

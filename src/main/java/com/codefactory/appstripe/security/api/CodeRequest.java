@@ -2,50 +2,44 @@ package com.codefactory.appstripe.security.api;
 
 import java.util.Objects;
 
-import lombok.Data;
-import com.codefactory.appstripe.security.domain.User;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 
-@Data
 public class CodeRequest {
-    private String username;
+
+    @NotBlank
+    private String twoFactorSecret;
+
+    @Min(0)
     private int code;
 
     public CodeRequest() {
     }
 
-    public CodeRequest(String username, int code) {
-        this.username = username;
+    public CodeRequest(String twoFactorSecret, int code) {
+        this.twoFactorSecret = twoFactorSecret;
         this.code = code;
     }
 
-    public String getUsername() {
-        return this.username;
+    public String getTwoFactorSecret() {
+        return this.twoFactorSecret;
     }
 
-    public User getUser() {
-        return new User(this.username, "");
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
+    public void setTwoFactorSecret(String twoFactorSecret) {
+        this.twoFactorSecret = twoFactorSecret;
     }
 
     public int getCode() {
         return this.code;
     }
 
-    public void setCode(int code) {
-        this.code = code;
-    }
-
-    public CodeRequest username(String username) {
-        setUsername(username);
-        return this;
-    }
-
     public CodeRequest code(int code) {
         setCode(code);
         return this;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
     }
 
     @Override
@@ -56,18 +50,18 @@ public class CodeRequest {
             return false;
         }
         CodeRequest codeRequest = (CodeRequest) o;
-        return Objects.equals(username, codeRequest.username) && code == codeRequest.code;
+        return Objects.equals(twoFactorSecret, codeRequest.twoFactorSecret) && code == codeRequest.code;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(username, code);
+        return Objects.hash(twoFactorSecret, code);
     }
 
     @Override
     public String toString() {
         return "{" +
-            " username='" + getUsername() + "'" +
+            " twoFactorSecret='" + getTwoFactorSecret() + "'" +
             ", code='" + getCode() + "'" +
             "}";
     }

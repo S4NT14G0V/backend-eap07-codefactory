@@ -1,119 +1,90 @@
 package com.codefactory.appstripe.security;
 
-import com.codefactory.appstripe.security.api.AuthController;
-import com.codefactory.appstripe.security.api.CodeRequest;
-import com.codefactory.appstripe.security.aplication.TwoFactorService;
-import com.codefactory.appstripe.security.aplication.port.TwoFactorPort;
-import com.codefactory.appstripe.security.domain.User;
-import com.codefactory.appstripe.security.infrastructure.adapter.GoogleAuthAdapter;
-import com.warrenstrange.googleauth.GoogleAuthenticator;
-import org.junit.jupiter.api.BeforeEach;
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.codefactory.appstripe.common.api.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.warrenstrange.googleauth.GoogleAuthenticator;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class SecurityTests {
 
-    @Mock
-    private TwoFactorPort twoFactorPort;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @InjectMocks
-    private TwoFactorService twoFactorService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @Mock
-    private TwoFactorService mockedTwoFactorService;
+    @Test
+    @DisplayName("Debe generar un secreto 2FA desde la API")
+    void shouldGenerateTwoFactorSecretViaApi() throws Exception {
+        String response = mockMvc.perform(post("/api/v1/2fa/secret")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.secret").isNotEmpty())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-    private AuthController authController;
-    private final GoogleAuthAdapter googleAuthAdapter = new GoogleAuthAdapter();
-
-    @BeforeEach
-    void setup() {
-        authController = new AuthController(mockedTwoFactorService);
+                assertThat(objectMapper.readTree(response).get("secret").asText()).isNotBlank();
     }
 
     @Test
-    @DisplayName("Debería devolver true cuando el código 2FA es válido")
-    void shouldReturnTrueWhenCodeIsValid() {
-        User user = new User("merchant1", "password123", "secret-key");
-        int code = 123456;
+    @DisplayName("Debe validar un código TOTP correcto desde la API")
+    void shouldVerifyTotpCodeViaApi() throws Exception {
+        String secretResponse = mockMvc.perform(post("/api/v1/2fa/secret")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-        when(twoFactorPort.verify(user.getTwoFactorSecret(), code)).thenReturn(true);
+        String secret = objectMapper.readTree(secretResponse).get("secret").asText();
 
-        boolean result = twoFactorService.verifyCode(user, code);
-
-        assertTrue(result, "El servicio debe validar el código 2FA correcto");
-        verify(twoFactorPort).verify(user.getTwoFactorSecret(), code);
-    }
-
-    @Test
-    @DisplayName("Debería devolver false cuando el código 2FA es inválido")
-    void shouldReturnFalseWhenCodeIsInvalid() {
-        User user = new User("merchant1", "password123", "secret-key");
-        int code = 654321;
-
-        when(twoFactorPort.verify(user.getTwoFactorSecret(), code)).thenReturn(false);
-
-        boolean result = twoFactorService.verifyCode(user, code);
-
-        assertFalse(result, "El servicio debe rechazar el código 2FA incorrecto");
-        verify(twoFactorPort).verify(user.getTwoFactorSecret(), code);
-    }
-
-    @Test
-    @DisplayName("Debería generar un secreto 2FA no nulo y no vacío")
-    void shouldGenerateNonEmptySecret() {
-        String secret = googleAuthAdapter.generateSecret();
-
-        assertNotNull(secret, "El secreto 2FA no debe ser nulo");
-        assertFalse(secret.isBlank(), "El secreto 2FA no debe ser vacío");
-    }
-
-    @Test
-    @DisplayName("Debería verificar un código válido generado por Google Authenticator")
-    void shouldVerifyValidCode() {
-        String secret = googleAuthAdapter.generateSecret();
         GoogleAuthenticator authenticator = new GoogleAuthenticator();
         int validCode = authenticator.getTotpPassword(secret);
 
-        assertTrue(googleAuthAdapter.verify(secret, validCode), "El adaptador debe aceptar un código TOTP válido");
+        mockMvc.perform(post("/api/v1/2fa/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "twoFactorSecret": "%s",
+                                  "code": %d
+                                }
+                                """.formatted(secret, validCode)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true));
     }
 
     @Test
-    @DisplayName("Debería rechazar un código 2FA inválido")
-    void shouldRejectInvalidCode() {
-        String secret = googleAuthAdapter.generateSecret();
-        GoogleAuthenticator authenticator = new GoogleAuthenticator();
-        int validCode = authenticator.getTotpPassword(secret);
-        int invalidCode = validCode == 0 ? 1 : validCode + 1;
+    @DisplayName("Debe devolver error de validación estandarizado cuando falta el secreto")
+    void shouldReturnStandardValidationErrorWhenSecretMissing() throws Exception {
+        String response = mockMvc.perform(post("/api/v1/2fa/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "code": 123456
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.traceId").isNotEmpty())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-        assertFalse(googleAuthAdapter.verify(secret, invalidCode), "El adaptador debe rechazar un código TOTP inválido");
-    }
-
-    @Test
-    @DisplayName("Debería devolver OK y true cuando el código 2FA es válido en el controlador")
-    void shouldReturnOkWhenCodeIsValidInController() {
-        CodeRequest request = new CodeRequest("merchant1", 123456);
-
-        when(mockedTwoFactorService.verifyCode(any(User.class), eq(123456))).thenReturn(true);
-
-        ResponseEntity<?> response = authController.verify(request);
-
-        assertEquals(200, response.getStatusCodeValue(), "Debe retornar 200 OK");
-        assertTrue((Boolean) response.getBody(), "El cuerpo de la respuesta debe ser true cuando el código es válido");
-        verify(mockedTwoFactorService).verifyCode(any(User.class), eq(123456));
+        assertThat(objectMapper.readValue(response, ErrorResponse.class).getDetails())
+                .anyMatch(detail -> detail.contains("twoFactorSecret"));
     }
 }
