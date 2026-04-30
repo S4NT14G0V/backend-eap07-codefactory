@@ -1,6 +1,8 @@
 package com.codefactory.appstripe.identity.infrastructure.persistence.entity;
 
+import com.codefactory.appstripe.identity.domain.ApiCredentialPermission;
 import com.codefactory.appstripe.identity.domain.MerchantStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,4 +34,8 @@ public class MerchantJpaEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private MerchantStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "permission", nullable = false)
+    private ApiCredentialPermission permission;
 }

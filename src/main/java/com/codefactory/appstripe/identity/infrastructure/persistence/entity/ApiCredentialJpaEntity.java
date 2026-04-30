@@ -1,5 +1,7 @@
 package com.codefactory.appstripe.identity.infrastructure.persistence.entity;
 
+import com.codefactory.appstripe.identity.domain.ApiCredentialPermission;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -28,4 +30,7 @@ public class ApiCredentialJpaEntity {
 
     @Column(name = "active", nullable = false)
     private boolean active;
+
+    @Column(name = "permission", nullable = false)
+    private ApiCredentialPermission permission;
 }

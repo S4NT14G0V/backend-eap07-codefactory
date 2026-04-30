@@ -13,11 +13,13 @@ public class ApiCredential {
     private String plainSecret; // para mostrar una vez al usuario
     private String merchantId;
     private boolean active; // si el merchant esta inactivo, se inactivan sus credenciales
+    private ApiCredentialPermission permission; // permisos asociados a esta credencial
 
     public void markAsCreated(String publicId, String secretHash, String plainSecret) {
         this.publicId = publicId;
         this.secretHash = secretHash;
         this.plainSecret = plainSecret;
         this.active = true;
+        this.permission = ApiCredentialPermission.READ_ONLY; // permiso por defecto
     }
 }

@@ -1,12 +1,14 @@
 package com.codefactory.appstripe.identity.infrastructure.adapter;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Component;
+
 import com.codefactory.appstripe.identity.application.port.IApiCredentialRepositoryPort;
 import com.codefactory.appstripe.identity.domain.ApiCredential;
 import com.codefactory.appstripe.identity.infrastructure.persistence.entity.ApiCredentialJpaEntity;
 import com.codefactory.appstripe.identity.infrastructure.persistence.repository.IApiCredentialSpringRepository;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 public class ApiCredentialRepositoryAdapter implements IApiCredentialRepositoryPort {
@@ -36,6 +38,12 @@ public class ApiCredentialRepositoryAdapter implements IApiCredentialRepositoryP
         return springRepository.countByMerchantIdAndActiveTrue(merchantId);
     }
 
+    @Override
+    public Optional<ApiCredential> findByPublicId(String publicId) {
+        return springRepository.findByPublicId(publicId)
+                .map(this::toDomain);
+    }
+
     private ApiCredentialJpaEntity toEntity(ApiCredential credential) {
         ApiCredentialJpaEntity entity = new ApiCredentialJpaEntity();
         entity.setId(credential.getId());
@@ -43,6 +51,7 @@ public class ApiCredentialRepositoryAdapter implements IApiCredentialRepositoryP
         entity.setSecretHash(credential.getSecretHash());
         entity.setMerchantId(credential.getMerchantId());
         entity.setActive(credential.isActive());
+        entity.setPermission(credential.getPermission());
         return entity;
     }
 
@@ -53,6 +62,7 @@ public class ApiCredentialRepositoryAdapter implements IApiCredentialRepositoryP
                 .secretHash(entity.getSecretHash())
                 .merchantId(entity.getMerchantId())
                 .active(entity.isActive())
+                .permission(entity.getPermission())
                 .build();
     }
 }
