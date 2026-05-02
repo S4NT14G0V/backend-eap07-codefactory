@@ -1,6 +1,7 @@
 package com.codefactory.appstripe.transactions.api;
 
 import com.codefactory.appstripe.identity.application.port.IApiCredentialRepositoryPort;
+import com.codefactory.appstripe.identity.application.port.IApiKeyGeneratorPort;  // ADD THIS
 import com.codefactory.appstripe.transactions.application.TransactionApplicationService;
 import com.codefactory.appstripe.transactions.domain.Transaction;
 import org.junit.jupiter.api.DisplayName;
@@ -29,7 +30,10 @@ class TransactionControllerTest {
     private TransactionApplicationService transactionApplicationService;
     
     @MockBean
-    private IApiCredentialRepositoryPort apiCredentialRepositoryPort;  // Add this mock
+    private IApiCredentialRepositoryPort apiCredentialRepositoryPort;
+    
+    @MockBean
+    private IApiKeyGeneratorPort apiKeyGeneratorPort;  // ADD THIS
 
     @Test
     @DisplayName("Debe crear transacción y retornar CREATED")
