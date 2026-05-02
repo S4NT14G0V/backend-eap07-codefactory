@@ -39,10 +39,6 @@ jobs:
         run: ./mvnw -B -DskipTests=false clean verify
 
       - name: Run SonarScan
-        run: |
-          ./mvnw -B -Dsonar.projectKey=...  # cambiar mvn por ./mvnw
-
-      - name: Run SonarScan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORG: ${{ secrets.SONAR_ORG }}
