@@ -30,10 +30,10 @@ class TransactionControllerTest {
     private TransactionApplicationService transactionApplicationService;
     
     @MockBean
-    private IApiCredentialRepositoryPort apiCredentialRepositoryPort;
-    
+    private IApiCredentialRepositoryPort credentialRepository; 
+
     @MockBean
-    private IApiKeyGeneratorPort apiKeyGeneratorPort;  // ADD THIS
+    private IApiKeyGeneratorPort keyGenerator;                 
 
     @Test
     @DisplayName("Debe crear transacción y retornar CREATED")
