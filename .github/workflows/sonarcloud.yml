@@ -32,8 +32,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
 
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
       - name: Build and run tests
-        run: mvn -B -DskipTests=false clean verify
+        run: ./mvnw -B -DskipTests=false clean verify
+
+      - name: Run SonarScan
+        run: |
+          ./mvnw -B -Dsonar.projectKey=...  # cambiar mvn por ./mvnw
 
       - name: Run SonarScan
         env:

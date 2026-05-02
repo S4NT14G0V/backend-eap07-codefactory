@@ -1,6 +1,6 @@
 package com.codefactory.appstripe.transactions.api;
 
-import com.codefactory.appstripe.identity.application.port.IApiCredentialRepositoryPort;
+import com.codefactory.appstripe.security.infrastructure.filter.CredentialValidationFilter;
 import com.codefactory.appstripe.transactions.application.TransactionApplicationService;
 import com.codefactory.appstripe.transactions.domain.Transaction;
 import org.junit.jupiter.api.DisplayName;
@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,7 +21,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(TransactionController.class)
+@WebMvcTest(
+    value = TransactionController.class,
+    excludeFilters = @ComponentScan.Filter(  // ← excluir el filtro
+        type = FilterType.ASSIGNABLE_TYPE,
+        classes = CredentialValidationFilter.class
+    )
+)
 class TransactionControllerTest {
 
     @Autowired
@@ -27,15 +35,13 @@ class TransactionControllerTest {
 
     @MockBean
     private TransactionApplicationService transactionApplicationService;
-    
-    @MockBean
-    private IApiCredentialRepositoryPort apiCredentialRepositoryPort;  // Add this mock
 
     @Test
     @DisplayName("Debe crear transacción y retornar CREATED")
     void shouldCreateTransaction() throws Exception {
         Transaction saved = new Transaction("trx-001", "mch-001", new BigDecimal("150.00"));
-        when(transactionApplicationService.assignInitialStatusCreated(any(Transaction.class))).thenReturn(saved);
+        when(transactionApplicationService.assignInitialStatusCreated(any(Transaction.class)))
+                .thenReturn(saved);
 
         mockMvc.perform(post("/api/v1/transactions")
                 .contentType(MediaType.APPLICATION_JSON)
