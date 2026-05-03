@@ -7,6 +7,7 @@ import com.codefactory.appstripe.transactions.infrastructure.persistence.mapper.
 import com.codefactory.appstripe.transactions.infrastructure.persistence.repository.ITransactionSpringRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -37,5 +38,12 @@ public class TransactionRepositoryAdapter implements ITransactionRepositoryPort 
 
         // devuelve el Dominio puro
         return mapper.toDomain(savedEntity);
+    }
+
+    @Override
+    public List<Transaction> findByMerchantId(String merchantId) {
+        return springRepository.findByMerchantId(merchantId).stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 }

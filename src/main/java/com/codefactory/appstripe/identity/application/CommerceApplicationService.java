@@ -3,6 +3,8 @@ package com.codefactory.appstripe.identity.application;
 import com.codefactory.appstripe.identity.application.port.ICommerceRepositoryPort;
 import com.codefactory.appstripe.identity.domain.Merchant;
 import com.codefactory.appstripe.identity.domain.MerchantStatus;
+import com.codefactory.appstripe.security.application.AuthenticationService;
+import com.codefactory.appstripe.security.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,7 @@ import java.util.UUID;
 public class CommerceApplicationService {
 
     private final ICommerceRepositoryPort commerceRepository;
+    private final AuthenticationService authenticationService;
 
     public Merchant registerMerchant(String businessName, String businessId, String email, String businessType) {
         if (commerceRepository.existsByBusinessId(businessId)) {
@@ -31,6 +34,21 @@ public class CommerceApplicationService {
                 .status(MerchantStatus.VERIFIED)
                 .build();
 
-        return commerceRepository.save(merchant);
+        Merchant savedMerchant = commerceRepository.save(merchant);
+        
+        // Crear usuario para el comercio
+        User merchantUser = authenticationService.createMerchantUser(email, savedMerchant.getId());
+        
+        // Retornamos el comercio
+        return savedMerchant;
+    }
+
+    public Merchant getMerchantProfile(String merchantId) {
+        if (merchantId == null || merchantId.isBlank()) {
+            throw new IllegalStateException("El token no tiene un comercio asociado");
+        }
+
+        return commerceRepository.findById(merchantId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Comercio no encontrado"));
     }
 }
