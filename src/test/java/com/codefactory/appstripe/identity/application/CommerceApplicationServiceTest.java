@@ -60,4 +60,40 @@ class CommerceApplicationServiceTest {
                 "ops@merchant.com",
                 "Retail"));
     }
+    @Test
+    @DisplayName("Debe consultar perfil de comercio existente")
+    void shouldGetMerchantProfile() {
+        Merchant merchant = Merchant.builder()
+                .id("mch_123")
+                .businessName("Tienda Demo")
+                .businessId("900123456")
+                .email("ops@merchant.com")
+                .businessType("Retail")
+                .status(MerchantStatus.VERIFIED)
+                .build();
+
+        when(commerceRepository.findById("mch_123")).thenReturn(java.util.Optional.of(merchant));
+
+        Merchant result = commerceApplicationService.getMerchantProfile("mch_123");
+
+        assertEquals("mch_123", result.getId());
+        assertEquals("Tienda Demo", result.getBusinessName());
+        assertEquals("ops@merchant.com", result.getEmail());
+    }
+
+    @Test
+    @DisplayName("Debe fallar si el comercio no existe")
+    void shouldFailWhenMerchantDoesNotExist() {
+        when(commerceRepository.findById("mch_missing")).thenReturn(java.util.Optional.empty());
+
+        assertThrows(java.util.NoSuchElementException.class,
+                () -> commerceApplicationService.getMerchantProfile("mch_missing"));
+    }
+
+    @Test
+    @DisplayName("Debe fallar si el merchantId viene vacío")
+    void shouldFailWhenMerchantIdIsBlank() {
+        assertThrows(IllegalStateException.class,
+                () -> commerceApplicationService.getMerchantProfile(" "));
+    }
 }

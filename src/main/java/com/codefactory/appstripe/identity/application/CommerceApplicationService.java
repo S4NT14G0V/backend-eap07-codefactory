@@ -42,4 +42,13 @@ public class CommerceApplicationService {
         // Retornamos el comercio
         return savedMerchant;
     }
+
+    public Merchant getMerchantProfile(String merchantId) {
+        if (merchantId == null || merchantId.isBlank()) {
+            throw new IllegalStateException("El token no tiene un comercio asociado");
+        }
+
+        return commerceRepository.findById(merchantId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Comercio no encontrado"));
+    }
 }
