@@ -1,6 +1,6 @@
 package com.codefactory.appstripe.security.infrastructure.adapter;
 
-import com.codefactory.appstripe.security.aplication.port.TwoFactorPort;
+import com.codefactory.appstripe.security.application.port.TwoFactorPort;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import org.springframework.stereotype.Component;
 

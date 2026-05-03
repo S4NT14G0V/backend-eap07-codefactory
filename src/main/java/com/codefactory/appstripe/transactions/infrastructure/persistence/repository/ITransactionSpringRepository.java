@@ -4,7 +4,9 @@ import com.codefactory.appstripe.transactions.infrastructure.persistence.entity.
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ITransactionSpringRepository extends JpaRepository<TransactionJpaEntity, String> {
-    // vacia pero debe existir para crear la conexion con la base de datos
+    List<TransactionJpaEntity> findByMerchantId(String merchantId);
 }

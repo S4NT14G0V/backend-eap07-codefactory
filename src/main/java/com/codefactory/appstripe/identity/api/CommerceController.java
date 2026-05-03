@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/merchants")
+@RequestMapping("/api/v1/admin/merchants")
 public class CommerceController {
 
     private final CommerceApplicationService commerceApplicationService;

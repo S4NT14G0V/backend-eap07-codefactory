@@ -2,6 +2,7 @@ package com.codefactory.appstripe.transactions.application.port;
 
 import com.codefactory.appstripe.transactions.domain.Transaction;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -13,4 +14,7 @@ public interface ITransactionRepositoryPort {
 
     // Guarda o actualiza la transacción en la base de datos
     Transaction save(Transaction transaction);
+
+    // Busca transacciones por merchantId
+    List<Transaction> findByMerchantId(String merchantId);
 }

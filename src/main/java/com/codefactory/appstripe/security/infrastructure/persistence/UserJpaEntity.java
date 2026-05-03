@@ -2,6 +2,8 @@ package com.codefactory.appstripe.security.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -12,10 +14,20 @@ import lombok.Data;
 public class UserJpaEntity {
 
     @Id
-    private String username;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "password", nullable = true)
     private String password;
+
+    @Column(name = "role", nullable = false)
+    private String role;
+
+    @Column(name = "merchant_id", nullable = true)
+    private String merchantId;
 
     @Column(name = "two_factor_secret")
     private String twoFactorSecret;
@@ -23,14 +35,11 @@ public class UserJpaEntity {
     @Column(name = "two_factor_enabled", nullable = false)
     private boolean twoFactorEnabled;
 
-    // Constructor vacío (obligatorio para JPA)
-    public UserJpaEntity() {}
+    @Column(name = "invitation_token")
+    private String invitationToken;
 
-    // Constructor completo
-    public UserJpaEntity(String username, String password, String twoFactorSecret, boolean twoFactorEnabled) {
-        this.username = username;
-        this.password = password;
-        this.twoFactorSecret = twoFactorSecret;
-        this.twoFactorEnabled = twoFactorEnabled;
-    }
+    @Column(name = "account_activated", nullable = false)
+    private boolean accountActivated;
+
+    public UserJpaEntity() {}
 }
