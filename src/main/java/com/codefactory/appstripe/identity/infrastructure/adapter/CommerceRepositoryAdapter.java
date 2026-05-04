@@ -45,6 +45,7 @@ public class CommerceRepositoryAdapter implements ICommerceRepositoryPort {
         entity.setBusinessId(merchant.getBusinessId());
         entity.setEmail(merchant.getEmail());
         entity.setBusinessType(merchant.getBusinessType());
+        entity.setPermission(merchant.getPermission());
         entity.setStatus(merchant.getStatus());
         return entity;
     }
@@ -57,6 +58,7 @@ public class CommerceRepositoryAdapter implements ICommerceRepositoryPort {
                 .email(entity.getEmail())
                 .businessType(entity.getBusinessType())
                 .status(entity.getStatus())
+                .permission(entity.getPermission())
                 .build();
     }
 }

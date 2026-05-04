@@ -9,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 @Data
 @Entity
@@ -31,6 +33,7 @@ public class ApiCredentialJpaEntity {
     @Column(name = "active", nullable = false)
     private boolean active;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "permission", nullable = false)
     private ApiCredentialPermission permission;
 }

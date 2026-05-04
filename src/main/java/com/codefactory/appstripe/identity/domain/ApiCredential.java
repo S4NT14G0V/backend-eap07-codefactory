@@ -22,4 +22,7 @@ public class ApiCredential {
         this.active = true;
         this.permission = ApiCredentialPermission.READ_ONLY; // permiso por defecto
     }
+    public void revoke() {
+        this.active = false;
+    }
 }

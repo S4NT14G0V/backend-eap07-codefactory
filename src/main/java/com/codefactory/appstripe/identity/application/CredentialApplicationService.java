@@ -8,6 +8,10 @@ import com.codefactory.appstripe.identity.domain.Merchant;
 import com.codefactory.appstripe.identity.domain.MerchantStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.codefactory.appstripe.identity.domain.ApiCredentialPermission;
+
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +21,7 @@ public class CredentialApplicationService {
     private final ICommerceRepositoryPort commerceRepository;
     private final IApiKeyGeneratorPort keyGenerator;
 
+    @Transactional
     public ApiCredential generateCredentials(String merchantId) {
         // BUSCAR EL COMERCIO
         Merchant merchant = commerceRepository.findById(merchantId)
@@ -42,6 +47,7 @@ public class CredentialApplicationService {
                 .publicId(publicId)
                 .secretHash(keyGenerator.hashSecret(plainSecret)) // Guardamos el hash, no la clave real
                 .active(true)
+                .permission(ApiCredentialPermission.PAYMENTS)
                 .build();
 
         credentialRepository.save(newCredential);
@@ -51,5 +57,14 @@ public class CredentialApplicationService {
                 .publicId(publicId)
                 .plainSecret(plainSecret) // Este campo SOLO existe en este momento
                 .build();
+    }
+    @Transactional
+    public ApiCredential revokeCredential(String publicId) {
+        ApiCredential credential = credentialRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new NoSuchElementException("Credencial no encontrada: " + publicId));
+
+        credential.revoke();
+
+        return credentialRepository.save(credential);
     }
 }

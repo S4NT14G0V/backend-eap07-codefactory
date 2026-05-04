@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import com.codefactory.appstripe.security.application.port.TwoFactorPort;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
+import org.springframework.stereotype.Component;
 
 @Component
 public class GoogleAuthAdapter implements TwoFactorPort {

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import java.util.NoSuchElementException;
 
 import java.util.Optional;
 
@@ -84,5 +85,52 @@ class CredentialApplicationServiceTest {
         assertThrows(IllegalStateException.class, () -> {
             service.generateCredentials(mchId);
         });
+    }
+    @Test
+    @DisplayName("HU-10: revoca una credencial activa exitosamente")
+    void shouldRevokeCredentialSuccessfully() {
+        // Arrange
+        String publicId = "pk_live_123";
+
+        ApiCredential activeCredential = ApiCredential.builder()
+                .id("cred-001")
+                .publicId(publicId)
+                .secretHash("hashed_secret")
+                .merchantId("mch_001")
+                .active(true)
+                .build();
+
+        when(credentialRepository.findByPublicId(publicId))
+                .thenReturn(Optional.of(activeCredential));
+
+        when(credentialRepository.save(any(ApiCredential.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        ApiCredential result = service.revokeCredential(publicId);
+
+        // Assert
+        assertFalse(result.isActive());
+        assertEquals(publicId, result.getPublicId());
+        verify(credentialRepository).findByPublicId(publicId);
+        verify(credentialRepository).save(any(ApiCredential.class));
+    }
+
+    @Test
+    @DisplayName("HU-10: retorna error si la credencial no existe")
+    void shouldThrowExceptionWhenCredentialDoesNotExist() {
+        // Arrange
+        String publicId = "pk_live_missing";
+
+        when(credentialRepository.findByPublicId(publicId))
+                .thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(NoSuchElementException.class, () -> {
+            service.revokeCredential(publicId);
+        });
+
+        verify(credentialRepository).findByPublicId(publicId);
+        verify(credentialRepository, never()).save(any(ApiCredential.class));
     }
 }

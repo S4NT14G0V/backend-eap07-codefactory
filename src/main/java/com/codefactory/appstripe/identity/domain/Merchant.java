@@ -16,4 +16,5 @@ public class Merchant {
     private String email;
     private String businessType;
     private MerchantStatus status; // Aquí usamos el Enum que creamos antes
+    private ApiCredentialPermission permission;
 }

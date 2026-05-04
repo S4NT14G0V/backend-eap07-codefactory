@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.codefactory.appstripe.identity.application.port.ICommerceRepositoryPort;
+import com.codefactory.appstripe.identity.domain.ApiCredentialPermission;
 import com.codefactory.appstripe.identity.domain.Merchant;
 import com.codefactory.appstripe.identity.domain.MerchantStatus;
 import com.codefactory.appstripe.security.application.AuthenticationService;
@@ -33,13 +34,14 @@ public class CommerceApplicationService {
                 .email(email)
                 .businessType(businessType)
                 .status(MerchantStatus.VERIFIED)
+                .permission(ApiCredentialPermission.PAYMENTS)
                 .build();
 
         Merchant savedMerchant = commerceRepository.save(merchant);
-        
+
         // Crear usuario para el comercio
         authenticationService.createMerchantUser(email, savedMerchant.getId());
-        
+
         // Retornamos el comercio
         return savedMerchant;
     }

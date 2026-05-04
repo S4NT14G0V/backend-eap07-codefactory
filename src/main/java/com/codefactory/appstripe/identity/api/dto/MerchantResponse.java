@@ -13,6 +13,7 @@ public class MerchantResponse {
     String email;
     String businessType;
     String status;
+    String permission;
 
     public static MerchantResponse fromDomain(Merchant merchant) {
         return MerchantResponse.builder()
@@ -22,6 +23,7 @@ public class MerchantResponse {
                 .email(merchant.getEmail())
                 .businessType(merchant.getBusinessType())
                 .status(merchant.getStatus().name())
+                .permission(merchant.getPermission().name())
                 .build();
     }
 }

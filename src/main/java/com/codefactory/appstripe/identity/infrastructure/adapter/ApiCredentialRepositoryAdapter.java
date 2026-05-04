@@ -44,6 +44,7 @@ public class ApiCredentialRepositoryAdapter implements IApiCredentialRepositoryP
                 .map(this::toDomain);
     }
 
+
     private ApiCredentialJpaEntity toEntity(ApiCredential credential) {
         ApiCredentialJpaEntity entity = new ApiCredentialJpaEntity();
         entity.setId(credential.getId());
@@ -65,4 +66,5 @@ public class ApiCredentialRepositoryAdapter implements IApiCredentialRepositoryP
                 .permission(entity.getPermission())
                 .build();
     }
+
 }
