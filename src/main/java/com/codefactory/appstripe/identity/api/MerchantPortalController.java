@@ -1,20 +1,20 @@
 package com.codefactory.appstripe.identity.api;
 
-import com.codefactory.appstripe.identity.api.dto.MerchantResponse;
-import com.codefactory.appstripe.identity.application.CommerceApplicationService;
-import com.codefactory.appstripe.identity.application.port.ICommerceRepositoryPort;
-import com.codefactory.appstripe.identity.application.port.IApiCredentialRepositoryPort;
-import com.codefactory.appstripe.identity.domain.ApiCredential;
-import com.codefactory.appstripe.identity.domain.Merchant;
-import com.codefactory.appstripe.transactions.application.port.ITransactionRepositoryPort;
-import com.codefactory.appstripe.transactions.domain.Transaction;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.codefactory.appstripe.identity.api.dto.MerchantResponse;
+import com.codefactory.appstripe.identity.application.CommerceApplicationService;
+import com.codefactory.appstripe.identity.application.port.IApiCredentialRepositoryPort;
+import com.codefactory.appstripe.identity.domain.ApiCredential;
+import com.codefactory.appstripe.identity.domain.Merchant;
+import com.codefactory.appstripe.transactions.application.port.ITransactionRepositoryPort;
+import com.codefactory.appstripe.transactions.domain.Transaction;
 
 @RestController
 @RequestMapping("/api/v1/merchant-portal")

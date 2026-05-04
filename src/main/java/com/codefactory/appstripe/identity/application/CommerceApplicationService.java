@@ -1,14 +1,15 @@
 package com.codefactory.appstripe.identity.application;
 
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import com.codefactory.appstripe.identity.application.port.ICommerceRepositoryPort;
 import com.codefactory.appstripe.identity.domain.Merchant;
 import com.codefactory.appstripe.identity.domain.MerchantStatus;
 import com.codefactory.appstripe.security.application.AuthenticationService;
-import com.codefactory.appstripe.security.domain.User;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +38,7 @@ public class CommerceApplicationService {
         Merchant savedMerchant = commerceRepository.save(merchant);
         
         // Crear usuario para el comercio
-        User merchantUser = authenticationService.createMerchantUser(email, savedMerchant.getId());
+        authenticationService.createMerchantUser(email, savedMerchant.getId());
         
         // Retornamos el comercio
         return savedMerchant;
