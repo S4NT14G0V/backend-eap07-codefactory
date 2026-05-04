@@ -46,6 +46,7 @@ public class CommerceApplicationService {
         return savedMerchant;
     }
 
+    // Método que permite optener un Merchant a partir de su ID, se utiliza para obtener el perfil del comercio a partir del token JWT
     public Merchant getMerchantProfile(String merchantId) {
         if (merchantId == null || merchantId.isBlank()) {
             throw new IllegalStateException("El token no tiene un comercio asociado");
@@ -53,5 +54,23 @@ public class CommerceApplicationService {
 
         return commerceRepository.findById(merchantId)
                 .orElseThrow(() -> new java.util.NoSuchElementException("Comercio no encontrado"));
+    }
+
+    // Método que permite actualizar el perfil de un comercio, se utiliza para actualizar el perfil del comercio a partir del token JWT
+    public Merchant updateMerchant(String merchantId, String newName, String newEmail, String newType) {
+
+        Merchant oldMerchant = getMerchantProfile(merchantId);
+
+        Merchant updated = Merchant.builder()
+                .id(oldMerchant.getId())
+                .businessId(oldMerchant.getBusinessId())
+                .status(oldMerchant.getStatus())
+                .permission(oldMerchant.getPermission())
+                .businessName(newName)
+                .email(newEmail)
+                .businessType(newType)
+                .build();
+
+        return commerceRepository.save(updated);
     }
 }

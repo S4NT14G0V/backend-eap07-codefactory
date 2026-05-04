@@ -5,16 +5,21 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.codefactory.appstripe.identity.api.dto.MerchantResponse;
+import com.codefactory.appstripe.identity.api.dto.UpdateMerchantProfileRequest;
 import com.codefactory.appstripe.identity.application.CommerceApplicationService;
 import com.codefactory.appstripe.identity.application.port.IApiCredentialRepositoryPort;
 import com.codefactory.appstripe.identity.domain.ApiCredential;
 import com.codefactory.appstripe.identity.domain.Merchant;
 import com.codefactory.appstripe.transactions.application.port.ITransactionRepositoryPort;
 import com.codefactory.appstripe.transactions.domain.Transaction;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/merchant-portal")
@@ -53,6 +58,22 @@ public class MerchantPortalController {
         String merchantId = extractMerchantId(authentication);
         List<Transaction> transactions = transactionRepository.findByMerchantId(merchantId);
         return ResponseEntity.ok(transactions);
+    }
+
+    @PutMapping("/update-profile")
+    public ResponseEntity<MerchantResponse> putProfile(Authentication authentication ,
+        @Valid @RequestBody UpdateMerchantProfileRequest request) {
+        
+        String merchantId = extractMerchantId(authentication);
+        Merchant merchant = commerceApplicationService.updateMerchant(
+                merchantId,
+            request.getBusinessName(),
+            request.getEmail(),
+            request.getBusinessType()
+        );
+        
+
+        return ResponseEntity.ok(MerchantResponse.fromDomain(merchant));
     }
 
     private String extractMerchantId(Authentication authentication) {
