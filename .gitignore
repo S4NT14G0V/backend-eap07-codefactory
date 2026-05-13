@@ -44,5 +44,8 @@ skills-lock.json
 # Ignora todos los reportes de auditoría ejecutiva
 AUDITORIA_EJECUTIVA_AZURE_*.md
 
-# Ignora todos los documentos PDF (como el informe del motor de pagos)
+# Ignora todos los documentos PDF
 *.pdf
+
+# Environment files (ignore .env files)
+.env
