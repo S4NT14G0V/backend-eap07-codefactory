@@ -2,6 +2,7 @@ package com.codefactory.appstripe.security.infrastructure.config;
 
 import com.codefactory.appstripe.security.infrastructure.filter.CredentialValidationFilter;
 import com.codefactory.appstripe.security.infrastructure.filter.JwtAuthenticationFilter;
+import jakarta.servlet.http.Cookie;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,10 +12,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final Set<String> CSRF_SAFE_METHODS = Set.of("GET", "HEAD", "TRACE", "OPTIONS");
+    private static final String SESSION_COOKIE_NAME = "JSESSIONID";
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CredentialValidationFilter credentialValidationFilter;
@@ -31,9 +38,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf
-                        // La API B2B versionada es stateless y se autentica con headers
-                        // (Bearer JWT o X-Public-Id/X-Secret), no con cookies de sesion.
-                        .ignoringRequestMatchers("/api/v1/**")
+                        .requireCsrfProtectionMatcher(cookieSessionCsrfMatcher())
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -51,5 +56,24 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder springPasswordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    private RequestMatcher cookieSessionCsrfMatcher() {
+        return request -> !CSRF_SAFE_METHODS.contains(request.getMethod())
+                && hasSessionCookie(request.getCookies());
+    }
+
+    private boolean hasSessionCookie(Cookie[] cookies) {
+        if (cookies == null) {
+            return false;
+        }
+
+        for (Cookie cookie : cookies) {
+            if (SESSION_COOKIE_NAME.equals(cookie.getName())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
