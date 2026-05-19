@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.equalTo;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("local")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class IntegrationApiTest {
+class IntegrationApiTest {
 
     @LocalServerPort
     int port;
@@ -33,19 +33,33 @@ public class IntegrationApiTest {
 
     @Test
     void postmanFlow_like_integration_test() {
+        Response csrfResp = given()
+            .when().get("/api/v1/security/csrf")
+            .then().statusCode(200)
+                .extract().response();
+
+        String csrfToken = csrfResp.jsonPath().getString("token");
+        String csrfHeaderName = csrfResp.jsonPath().getString("headerName");
+        String csrfCookie = csrfResp.cookie("XSRF-TOKEN");
+
+        Assertions.assertNotNull(csrfToken, "CSRF token should be returned");
+        Assertions.assertNotNull(csrfCookie, "CSRF cookie should be returned");
+
         // 1) Login as admin (seeded by DataSeeder)
         Map<String, Object> login = new HashMap<>();
         login.put("email", "admin@paycore.com");
         login.put("password", "admin123");
 
         String token = given()
+                .cookie("XSRF-TOKEN", csrfCookie)
+                .header(csrfHeaderName, csrfToken)
                 .contentType("application/json")
                 .body(login)
             .when().post("/api/v1/auth/login")
             .then().statusCode(200)
                 .extract().path("token");
 
-        Assertions.assertNotNull(token, "admin token should be returned");
+        Assertions.assertNotNull(token, "Admin token should be returned");
 
         // 2) Create merchant
         long ts = System.currentTimeMillis();
@@ -56,6 +70,8 @@ public class IntegrationApiTest {
         merchant.put("businessName", "Mi Tienda SAS " + ts);
 
         String merchantId = given()
+                .cookie("XSRF-TOKEN", csrfCookie)
+                .header(csrfHeaderName, csrfToken)
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
                 .body(merchant)
@@ -70,6 +86,8 @@ public class IntegrationApiTest {
         gen.put("merchantId", merchantId);
 
         Response genResp = given()
+                .cookie("XSRF-TOKEN", csrfCookie)
+                .header(csrfHeaderName, csrfToken)
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
                 .body(gen)
@@ -91,6 +109,8 @@ public class IntegrationApiTest {
         tx.put("paymentToken", "tok_visa_approved");
 
         String paymentId = given()
+                .cookie("XSRF-TOKEN", csrfCookie)
+                .header(csrfHeaderName, csrfToken)
                 .header("X-Merchant-Id", merchantId)
                 .header("X-Public-Id", publicId)
                 .header("X-Secret", secret)

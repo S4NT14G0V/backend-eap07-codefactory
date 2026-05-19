@@ -33,24 +33,20 @@ public class CredentialValidationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // Solo validar endpoints de transacciones
         if (!request.getRequestURI().startsWith("/api/v1/transactions")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 1. Extraer headers
         String publicId  = request.getHeader("X-Public-Id");
         String secret    = request.getHeader("X-Secret");
         String merchantId = request.getHeader("X-Merchant-Id");
 
-        // 2. Verificar que no vengan vacíos
         if (isBlank(publicId) || isBlank(secret) || isBlank(merchantId)) {
             sendUnauthorized(response, "MISSING_CREDENTIALS", "Credenciales requeridas en headers");
             return;
         }
 
-        // 3. Buscar credencial por publicId
         Optional<ApiCredential> credentialOpt = credentialRepository.findByPublicId(publicId);
         if (credentialOpt.isEmpty() || !credentialOpt.get().isActive()) {
             sendUnauthorized(response, "INVALID_CREDENTIALS", "Credenciales inválidas o inactivas");
@@ -59,29 +55,23 @@ public class CredentialValidationFilter extends OncePerRequestFilter {
 
         ApiCredential credential = credentialOpt.get();
 
-        // 4. Verificar el hash del secret
         String hashedSecret = keyGenerator.hashSecret(secret);
         if (!hashedSecret.equals(credential.getSecretHash())) {
             sendUnauthorized(response, "INVALID_CREDENTIALS", "Credenciales inválidas");
             return;
         }
-
-        // 5. Verificar que pertenecen al comercio correcto
         if (!credential.getMerchantId().equals(merchantId)) {
             sendUnauthorized(response, "CREDENTIAL_MISMATCH",
                     "Las credenciales no son válidas para este comercio");
             return;
         }
 
-        // 6. Verificar permiso para pagos
         if (credential.getPermission() != ApiCredentialPermission.PAYMENTS
                 && credential.getPermission() != ApiCredentialPermission.FULL_ACCESS) {
             sendUnauthorized(response, "INSUFFICIENT_PERMISSIONS",
                     "Sus credenciales no tienen permiso para esta operación");
             return;
         }
-
-        // ✅ Todo válido
         filterChain.doFilter(request, response);
     }
 
