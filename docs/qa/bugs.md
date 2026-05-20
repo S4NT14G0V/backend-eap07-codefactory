@@ -1,6 +1,6 @@
 # Registro de Bugs — QA
 
-**Estado actual (2026-05-13T00:33:55-05:00):** No hay bugs abiertos detectados por la ejecución automatizada de pruebas unitarias.
+**Estado actual (2026-05-20):** No hay bugs abiertos detectados por la ejecución automatizada de pruebas unitarias.
 
 ## Plantilla para nuevo bug
 
