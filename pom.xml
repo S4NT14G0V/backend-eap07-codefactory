@@ -249,14 +249,14 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
+						<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<excludes>
-						<!-- Excluimos IntegrationApiTest porque sus casos están cubiertos por Serenity BDD (.feature) -->
-						<exclude>**/integration/IntegrationApiTest.java</exclude>
-					</excludes>
+					<includes>
+						<include>**/*Test.java</include>
+						<include>**/SerenityTestRunner.java</include>
+					</includes>
 				</configuration>
 			</plugin>
 			<plugin>

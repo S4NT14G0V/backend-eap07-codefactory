@@ -318,9 +318,9 @@ La estructura de campos propuesta para cada uno de estos casos de prueba es:
 | **Supuestos	y precondiciones** | Comercio en estado ACCEPTED con datos de perfil y bancarios registrados. Administrador con sesión activa (token no vencido). Endpoint GET /api/merchants/{merchantId}/profile disponible. |
 | **Pasos y condiciones de ejecución** | Autenticarse como administrador del comercio y obtener token de sesión. Enviar GET /api/merchants/{merchantId}/profile con el token en el header Authorization. Verificar el código de respuesta HTTP. Validar que la respuesta incluye: nombre, datos de contacto, estado actual (ACCEPTED) y datos bancarios enmascarados. Confirmar que el número de cuenta bancaria aparece enmascarado (ej.: \*\*\*\*5678). Confirmar que el merchantId en la respuesta coincide con el del comercio autenticado. |
 | **Resultado esperado** | HTTP 200 OK. La respuesta incluye todos los campos del perfil del comercio. Los datos bancarios se presentan con enmascaramiento parcial (últimos 4 dígitos visibles). El estado del comercio es ACCEPTED. El campo merchantID no es editable. |
-| **Estado del caso de prueba** | No ejecutado |
-| **Resultado obtenido** |  |
-| **Errores asociados** |  |
+| **Estado del caso de prueba** | **Ejecutado** |
+| **Resultado obtenido** | **FAIL** — HTTP 403 Forbidden. El filtro CredentialValidationFilter bloquea GET /api/merchants/{merchantId}/profile. |
+| **Errores asociados** | BUG-002 |
 | **Tipo de prueba** | Camino feliz |
 
 | CP-S2-005  ·  Acceso denegado al intentar consultar el perfil de otro comercio |  |
@@ -347,9 +347,9 @@ La estructura de campos propuesta para cada uno de estos casos de prueba es:
 | **Supuestos	y precondiciones** | Administrador	autenticado	con	rol	MERCHANT\_ADMIN	o MERCHANT\_OWNER. Comercio en estado ACCEPTED. Endpoint PATCH /api/merchants/{merchantId}/profile disponible. Solo el propietario del comercio o un administrador de plataforma puede modificar el perfil. |
 | **Pasos y condiciones de ejecución** | Autenticarse como administrador del comercio y obtener token de sesión. Construir payload con nuevos datos bancarios: número de cuenta, banco y tipo de cuenta. Enviar PATCH /api/merchants/{merchantId}/profile con el payload. Verificar el código de respuesta HTTP. Validar que en la respuesta el estado de los datos bancarios es PENDING\_VERIFICATION.  ***Verificaciones técnicas complementarias:*** · Consultar la bitácora y confirmar que registra: campos modificados, actorID y timestamp UTC. |
 | **Resultado esperado** | HTTP 200 OK. El sistema confirma que la actualización fue procesada y los datos bancarios quedan en estado PENDING\_VERIFICATION hasta ser validados por el equipo de la plataforma. El cambio queda trazado en la bitácora de auditoría. |
-| **Estado del caso de prueba** | NO EJECUTABLE |
-| **Resultado obtenido** |  |
-| **Errores asociados** |  |
+| **Estado del caso de prueba** | **Ejecutado** |
+| **Resultado obtenido** | **FAIL** — HTTP 403 Forbidden. El filtro CredentialValidationFilter bloquea PATCH /api/merchants/{merchantId}/profile. |
+| **Errores asociados** | BUG-004 |
 | **Tipo de prueba** | Camino feliz |
 
 | CP-S2-007 ·  Intento de modificación de campos inmutables del comercio rechazado |  |
@@ -434,9 +434,9 @@ La estructura de campos propuesta para cada uno de estos casos de prueba es:
 | **Supuestos	y precondiciones** | Transacción en estado PROCESSING registrada en la plataforma. Servicio de simulación del procesador (mock PSP) configurado para responder con aprobación. Comercio con canal de notificación (webhook) en estado ACTIVE. |
 | **Pasos y condiciones de ejecución** | Crear un pago con token tok\_visa\_approved y confirmar que transiciona a PROCESSING. Simular la respuesta de aprobación del PSP externo para el paymentId. Consultar GET /api/payments/{paymentId} y verificar que el estado es APPROVED. Verificar que el webhook del comercio recibió la notificación con: tipo de evento, paymentId, estado, monto, moneda y timestamp.  ***Verificaciones técnicas complementarias:*** Confirmar que la firma HMAC-SHA256 de la notificación es válida. Verificar en la bitácora: estado anterior (PROCESSING), estado nuevo (APPROVED), actorID y timestamp UTC. |
 | **Resultado esperado** | El pago queda en estado APPROVED. El comercio recibe la notificación de aprobación a través de su canal de webhooks con el contenido correcto del evento. La transición de estado es definitiva e irreversible. |
-| **Estado del caso de prueba** | Esperando implementación de HU |
-| **Resultado obtenido** |  |
-| **Errores asociados** |  |
+| **Estado del caso de prueba** | **Ejecutado** |
+| **Resultado obtenido** | **FAIL** — HTTP 403 Forbidden. CredentialValidationFilter bloquea PATCH /api/transactions/{id}/complete. No se puede validar transición a APPROVED.  |
+| **Errores asociados** | BUG-006 |
 | **Tipo de prueba** | Camino feliz |
 
 | CP-S2-015 · Pago rechazado por fondos insuficientes con motivo en lenguaje de negocio |  |
@@ -447,9 +447,9 @@ La estructura de campos propuesta para cada uno de estos casos de prueba es:
 | **Supuestos	y precondiciones** | Transacción en estado PROCESSING. Mock PSP configurado para responder con código de rechazo por fondos insuficientes. Comercio con canal de notificación activo. Mapeo de códigos del procesador a mensajes de negocio configurado. |
 | **Pasos y condiciones de ejecución** | Crear un pago usando el token de simulación de rechazo (ej.: tok\_insufficient\_funds). Confirmar que el pago transiciona a PROCESSING. Simular la respuesta de rechazo del PSP por fondos insuficientes. Consultar GET /api/payments/{paymentId} y verificar que el estado es REJECTED. Confirmar que el campo motivoRechazo contiene: 'El medio de pago del cliente no tiene saldo suficiente'. Verificar que el motivo es un valor del catálogo controlado, no un código técnico del procesador. Verificar que el webhook del comercio recibió la notificación de rechazo con el motivo correspondiente. |
 | **Resultado esperado** | El pago queda en estado REJECTED. El motivo de rechazo es comunicado al comercio en lenguaje de negocio comprensible, sin exponer códigos técnicos internos del procesador. El comercio recibe la notificación de rechazo a través de su canal de webhooks. |
-| **Estado del caso de prueba** | Esperando implementación de HU |
-| **Resultado obtenido** |  |
-| **Errores asociados** |  |
+| **Estado del caso de prueba** | **Ejecutado** |
+| **Resultado obtenido** | **FAIL** — HTTP 403 Forbidden. CredentialValidationFilter bloquea PATCH /api/transactions/{id}/complete. No se puede validar transición a REJECTED. |
+| **Errores asociados** | BUG-007 |
 | **Tipo de prueba** | Error |
 
 **HU012 — Configuración de canales de notificación automática (webhooks)**
@@ -491,8 +491,8 @@ La estructura de campos propuesta para cada uno de estos casos de prueba es:
 | **Supuestos	y precondiciones** | Transacción en estado CREATED en la plataforma. Mecanismo de auditoría inmutable activo en el sistema. Endpoint GET /api/payments/{paymentId}/audit disponible. |
 | **Pasos y condiciones de ejecución** | Verificar el estado inicial de la transacción (CREATED). Ejecutar el procesamiento que transiciona el pago a PROCESSING. Consultar GET /api/payments/{paymentId}/audit. Verificar que el registro contiene: paymentId, tipo de evento, estado anterior (CREATED), estado nuevo (PROCESSING), actorID y timestamp UTC.  ***Verificaciones técnicas complementarias:*** Intentar ejecutar UPDATE sobre el registro de auditoría en la base de datos. Intentar ejecutar DELETE sobre el mismo registro. Confirmar que ambas operaciones son rechazadas por el sistema. |
 | **Resultado esperado** | El sistema genera automáticamente un registro de auditoría completo e inmutable ante cada cambio de estado de la transacción. El registro contiene todos los campos de trazabilidad requeridos y no puede ser modificado ni eliminado bajo ninguna circunstancia. |
-| **Estado del caso de prueba** | Esperando implementación de HU |
-| **Resultado obtenido** |  |
+| **Estado del caso de prueba** | **Ejecutado** |
+| **Resultado obtenido** | **PASS** — La bitácora registra el evento de auditoría correctamente con estado anterior, estado nuevo, actorID y timestamp UTC. |
 | **Errores asociados** |  |
 | **Tipo de prueba** | Camino feliz |
 
@@ -521,9 +521,9 @@ La estructura de campos propuesta para cada uno de estos casos de prueba es:
 | **Pasos y condiciones de ejecución** | Autenticarse como administrador del comercio y obtener token de sesión. Enviar	GET /api/payments?status=APPROVED\&dateFrom=2025-04-01\&dateTo=2025-04-30 \&page=1\&pageSize=10. Verificar el código de respuesta HTTP. Confirmar que todos los registros retornados tienen estado APPROVED. Confirmar que todos los registros están dentro del rango de fechas especificado. Verificar la estructura de paginación en la respuesta: totalItems, totalPages, currentPage y pageSize. Solicitar la página 2 y verificar la continuidad de resultados sin duplicados. |
 | **Resultado esperado** | HTTP 200 OK. La respuesta contiene únicamente transacciones APPROVED dentro del rango de fechas. La estructura de paginación es correcta. El filtro de |
 |  | comercio es aplicado automáticamente según la sesión activa. El tamaño de página no supera 100 registros. |
-| **Estado del caso de prueba** | Esperando implementación de HU |
-| **Resultado obtenido** |  |
-| **Errores asociados** |  |
+| **Estado del caso de prueba** | **Ejecutado** |
+| **Resultado obtenido** | **FAIL** — HTTP 403 Forbidden. CredentialValidationFilter bloquea GET /api/transactions. No se puede validar paginación ni filtros. |
+| **Errores asociados** | BUG-011 |
 | **Tipo de prueba** | Camino feliz |
 
 | CP-S2-021 · Aislamiento garantizado: el comercio no accede a transacciones de otro comercio |  |
@@ -534,8 +534,8 @@ La estructura de campos propuesta para cada uno de estos casos de prueba es:
 | **Supuestos	y precondiciones** | Transacciones registradas para el Comercio A y el Comercio B. Administrador autenticado como administrador del Comercio A. Se conoce el merchantId del Comercio B. Endpoint GET /api/payments disponible. |
 | **Pasos y condiciones de ejecución** | Autenticarse como administrador del Comercio A y obtener token de sesión. Enviar	GET	/api/payments?merchantId={merchantId\_B}	incluyendo explícitamente el merchantId del Comercio B. Verificar el código de respuesta HTTP. Confirmar que los resultados pertenecen únicamente al Comercio A. Confirmar que no se expone ninguna transacción del Comercio B. Verificar que el parámetro merchantId enviado por el cliente es ignorado y el filtro se extrae de la sesión activa. |
 | **Resultado esperado** | HTTP 200 OK. La respuesta contiene exclusivamente las transacciones del Comercio A. El parámetro merchantId enviado por el cliente es ignorado; el filtro se aplica desde la sesión activa en el backend. Ningún dato del Comercio B es expuesto en la respuesta. |
-| **Estado del caso de prueba** | Esperando implementación de HU |
-| **Resultado obtenido** |  |
-| **Errores asociados** |  |
+| **Estado del caso de prueba** | **Ejecutado** |
+| **Resultado obtenido** | **FAIL** — HTTP 403 Forbidden. CredentialValidationFilter bloquea el endpoint. No se puede verificar aislamiento entre comercios. |
+| **Errores asociados** | BUG-013 |
 | **Tipo de prueba** | Error — Seguridad |
 
