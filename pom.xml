@@ -26,10 +26,25 @@
 		<tag/>
 		<url/>
 	</scm>
-	<properties>
-		<java.version>17</java.version>
-		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-	</properties>
+		<properties>
+			<java.version>17</java.version>
+			<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+			<serenity.version>5.3.10</serenity.version>
+			<selenium.version>4.27.0</selenium.version>
+			<rest-assured.version>5.5.7</rest-assured.version>
+		</properties>
+			<dependencyManagement>
+				<dependencies>
+					<dependency>
+						<groupId>net.serenity-bdd</groupId>
+						<artifactId>serenity-bom</artifactId>
+						<version>${serenity.version}</version>
+						<type>pom</type>
+						<scope>import</scope>
+					</dependency>
+				</dependencies>
+			</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -97,11 +112,65 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 		
-		<!-- REST-assured for integration tests that emulate the Postman collection -->
+				<!-- Serenity BDD para E2E automatizado (reportes vivos + BDD + API) -->
+				<dependency>
+					<groupId>net.serenity-bdd</groupId>
+					<artifactId>serenity-core</artifactId>
+					<scope>test</scope>
+				</dependency>
+
+				<!-- Selenium (compatible con Serenity 5.3.10: LocationContext existe en 4.27.x) -->
+				<dependency>
+					<groupId>org.seleniumhq.selenium</groupId>
+					<artifactId>selenium-api</artifactId>
+					<version>${selenium.version}</version>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>org.seleniumhq.selenium</groupId>
+					<artifactId>selenium-support</artifactId>
+					<version>${selenium.version}</version>
+					<scope>test</scope>
+				</dependency>
+		<dependency>
+			<groupId>net.serenity-bdd</groupId>
+			<artifactId>serenity-cucumber</artifactId>
+			<version>${serenity.version}</version>
+			<scope>test</scope>
+		</dependency>
+				<dependency>
+			<groupId>net.serenity-bdd</groupId>
+			<artifactId>serenity-rest-assured</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.serenity-bdd</groupId>
+			<artifactId>serenity-spring</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- JUnit Platform Suite para ejecutar Cucumber con @Suite (JUnit 5) -->
+		<dependency>
+			<groupId>org.junit.platform</groupId>
+			<artifactId>junit-platform-suite</artifactId>
+			<scope>test</scope>
+		</dependency>
+				<!-- Cucumber JUnit Platform Engine (JUnit 5 nativo, reemplaza a cucumber-junit) -->
+		<dependency>
+			<groupId>io.cucumber</groupId>
+			<artifactId>cucumber-junit-platform-engine</artifactId>
+			<scope>test</scope>
+		</dependency>
+								<!-- REST-assured (versión fija para evitar Jackson 3 incompatibilidades) -->
 		<dependency>
 			<groupId>io.rest-assured</groupId>
 			<artifactId>rest-assured</artifactId>
-			<version>5.3.0</version>
+			<version>${rest-assured.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.rest-assured</groupId>
+			<artifactId>json-path</artifactId>
+			<version>${rest-assured.version}</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -181,6 +250,16 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<!-- Excluimos IntegrationApiTest porque sus casos están cubiertos por Serenity BDD (.feature) -->
+						<exclude>**/integration/IntegrationApiTest.java</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.10</version>
@@ -201,6 +280,23 @@
 							<outputDirectory>${project.build.directory}/jacoco</outputDirectory>
 							<xml>true</xml>
 						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>net.serenity-bdd.maven.plugins</groupId>
+				<artifactId>serenity-maven-plugin</artifactId>
+				<version>${serenity.version}</version>
+				<configuration>
+					<reports>single-page-html</reports>
+				</configuration>
+				<executions>
+					<execution>
+						<id>serenity-reports</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>aggregate</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>

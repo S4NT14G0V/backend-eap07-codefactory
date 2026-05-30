@@ -309,7 +309,7 @@ class IntegrationApiTest {
 
     // ---------- HU006 — Validación de credenciales por solicitud ----------
 
-        @Test
+    @Test
     @Order(11)
     @DisplayName("CP-S2-001: Credenciales válidas + payments:write -> HTTP 201")
     void cp_s2_001_transactionWithValidCredentials() {
@@ -331,7 +331,7 @@ class IntegrationApiTest {
                 .body("status", equalTo("CREATED"));
     }
 
-        @Test
+    @Test
     @Order(12)
     @DisplayName("CP-S2-003: Credenciales de otro comercio -> HTTP 401 CREDENTIAL_MISMATCH")
     void cp_s2_003_transactionWithWrongMerchantCredentials() {

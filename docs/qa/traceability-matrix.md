@@ -1,10 +1,10 @@
 # Matriz de Trazabilidad
 
-Última actualización: **2026-05-13T00:33:55-05:00**
+Última actualización: **2026-05-30T00:11:17-05:00**
 
-Resumen ejecutivo: tabla de trazabilidad que relaciona todas las Historias de Usuario (HU) del proyecto con los tests automatizados, reportes y artefactos QA. Se incluyen HUs con cobertura conocida y placeholders para HUs sin definición o pruebas aún pendientes.
+Resumen ejecutivo: tabla de trazabilidad que relaciona todas las Historias de Usuario (HU) del proyecto con los tests automatizados, reportes y artefactos QA.
 
-Estado de ejecución de pruebas (última corrida): **24 tests, 0 fallos**. Informe JaCoCo: `target/site/jacoco/index.html`.
+Estado de ejecución de pruebas Serenity BDD (última corrida): **20 tests Serenity + unitarias, 13 fallos (0 errores)**. 7 Serenity tests pasaron, 13 fallaron. Las 13 fallas corresponden a funcionalidad backend no implementada (ver bugs en `docs/qa/bugs.md`). Informe JaCoCo: `target/site/jacoco/index.html`.
 
 Estado de cobertura global (extraído de `target/jacoco/jacoco.xml`):
 
@@ -20,16 +20,16 @@ Objetivo: cumplir los requisitos del PAC (Cobertura unitarias ≥ 40% en SonarCl
 | HU003 | Crear transacción | Transactions / Controller + Service | TransactionControllerTest (2), TransactionApplicationServiceTest (2) | Passed | - | target/surefire-reports/com.codefactory.appstripe.transactions.api.TransactionControllerTest.txt#L1, target/surefire-reports/com.codefactory.appstripe.transactions.application.TransactionApplicationServiceTest.txt#L1 | - | TBD | Done |
 | HU004 | Estado inicial CREATED en transacción | Transactions / Domain | TransactionApplicationServiceTest | Passed | - | target/surefire-reports/com.codefactory.appstripe.transactions.application.TransactionApplicationServiceTest.txt#L1 | - | TBD | Done |
 | HU005 | MFA Email OTP (orquestación) | Identity / MFA service (orchestration) | *No se encontró test unitario específico en la suite actual* | No cubierto | - | - | Pendiente (ver ejemplo en `bugs.md`) | TBD | Open (tests missing) |
-| HU006 | Validación por solicitud (API Key + secret hash) | Security / CredentialValidationFilter | CredentialValidationFilterTest (6 tests) | Passed | - | target/surefire-reports/com.codefactory.appstripe.security.infrastructure.filter.CredentialValidationFilterTest.txt#L1 | - | TBD | Done |
-| HU007 | Consulta de perfil de comercio | Identity / Commerce Profile | CP-S2-004 (GET /merchant-portal/profile) · CP-S2-005 (access control) | Partial — CP-S2-004: PASS; CP-S2-005: NO EJECUTABLE | - | [docs/qa/Casos de prueba.txt](docs/qa/Casos%20de%20prueba.txt#L691) | - | TBD | Partial |
-| HU008 | Actualización de perfil / configuración bancaria | Identity / Commerce Profile | CP-S2-006 (PATCH /merchants/{id}/profile) · CP-S2-007 (immutable fields) | Not executed / NO EJECUTABLE | - | [CP-S2-006](docs/qa/Casos%20de%20prueba.txt#L723), [CP-S2-007](docs/qa/Casos%20de%20prueba.txt#L738) | - | TBD | Open |
-| HU009 | Separación operativa de entornos (sandbox/producción) | Infra / DevOps | CP-S2-008 (reject sandbox creds in prod) · CP-S2-009 (sandbox simulated payment) | Pending / Awaiting HU implementation | - | [CP-S2-008](docs/qa/Casos%20de%20prueba.txt#L760), [CP-S2-009](docs/qa/Casos%20de%20prueba.txt#L780) | - | TBD | Pending |
-| HU010 | Revocación inmediata de credenciales | Identity / Credential Service | CP-S2-010 (revoke credential) · CP-S2-011 (revoked rejects requests) | PASS (both CP-S2-010, CP-S2-011 passed) | - | [CP-S2-010](docs/qa/Casos%20de%20prueba.txt#L815), [CP-S2-011](docs/qa/Casos%20de%20prueba.txt#L835) | - | TBD | Done |
-| HU011 | Rotación de credenciales sin interrupción | Identity / Credential Service | CP-S2-012 (rotate with grace period) · CP-S2-013 (auto-revoke after grace) | Pending / Awaiting HU implementation | - | [CP-S2-012](docs/qa/Casos%20de%20prueba.txt#L840), [CP-S2-013](docs/qa/Casos%20de%20prueba.txt#L860) | - | TBD | Pending |
-| HU012 | Procesamiento del resultado del pago (aprobado/rechazado/fallido) | Transactions / Payment Result | CP-S2-014 (approved path) · CP-S2-015 (rejected — insufficient funds) | Pending / Awaiting HU implementation | - | [CP-S2-014](docs/qa/Casos%20de%20prueba.txt#L881), [CP-S2-015](docs/qa/Casos%20de%20prueba.txt#L901) | - | TBD | Pending |
-| HU013 | Configuración de canales de notificación (webhooks) | Transactions / Notifier | CP-S2-016 (register webhook) · CP-S2-017 (retries & mark INACTIVE) | Pending / Awaiting HU implementation | - | [CP-S2-016](docs/qa/Casos%20de%20prueba.txt#L922), [CP-S2-017](docs/qa/Casos%20de%20prueba.txt#L942) | - | TBD | Pending |
-| HU014 | Registro automático de eventos de auditoría | Audit / Observability | CP-S2-018 (immutable audit entries) · CP-S2-019 (integrity detection) | Pending / Awaiting HU implementation | - | [CP-S2-018](docs/qa/Casos%20de%20prueba.txt#L963), [CP-S2-019](docs/qa/Casos%20de%20prueba.txt#L983) | - | TBD | Pending |
-| HU015 | Consulta del listado de pagos con filtros | Transactions / Query API | CP-S2-020 (filtered listing) · CP-S2-021 (isolation by merchant) | Pending / Awaiting HU implementation | - | [CP-S2-020](docs/qa/Casos%20de%20prueba.txt#L1006), [CP-S2-021](docs/qa/Casos%20de%20prueba.txt#L1027) | - | TBD | Pending |
+| HU006 | Validación por solicitud (API Key + secret hash) | Security / CredentialValidationFilter | CP-S2-001 · CP-S2-002 · CP-S2-003 · CP-S2-004 (Serenity BDD) | 3 PASS, **1 FAIL** (BUG-001) | - | `HU006_validacion_credenciales.feature` | BUG-001 | TBD | Partial |
+| HU007 | Consulta de perfil de comercio | Identity / Commerce Profile | CP-S2-005 (GET /merchant-portal/profile) · CP-S2-006 (sin auth) | **0 PASS, 2 FAIL** (BUG-002, BUG-003) | - | `HU007_consulta_perfil.feature` | BUG-002, BUG-003 | TBD | Open |
+| HU008 | Actualización de perfil / configuración bancaria | Identity / Commerce Profile | CP-S2-007 (PATCH profile) · CP-S2-008 (email inmutable) | **0 PASS, 2 FAIL** (BUG-004, BUG-005) | - | `HU008_actualizacion_perfil.feature` | BUG-004, BUG-005 | TBD | Open |
+| HU009 | Separación operativa de entornos (sandbox/producción) | Infra / DevOps | CP-S2-008 (reject sandbox creds in prod) · CP-S2-009 (sandbox simulated payment) | Pending / Awaiting HU implementation | - | - | - | TBD | Pending |
+| HU010 | Revocación inmediata de credenciales | Identity / Credential Service | CP-S2-010 (revoke credential) · CP-S2-011 (revoked rejects requests) · CP-S2-012 (revoke already revoked) | **3 PASS** | - | `HU010_revocacion_credenciales.feature` | - | TBD | Done |
+| HU011 | Rotación de credenciales sin interrupción | Identity / Credential Service | CP-S2-012 (rotate with grace period) · CP-S2-013 (auto-revoke after grace) | Pending / Awaiting HU implementation | - | - | - | TBD | Pending |
+| HU012 | Procesamiento del resultado del pago (aprobado/rechazado/fallido) | Transactions / Payment Result | CP-S2-014 (approved) · CP-S2-015 (rejected) · CP-S2-016 (already completed) | **0 PASS, 3 FAIL** (BUG-006, BUG-007, BUG-008) | - | `HU012_resultado_pago.feature` | BUG-006, BUG-007, BUG-008 | TBD | Open |
+| HU013 | Configuración de canales de notificación (webhooks) | Transactions / Notifier | CP-S2-016 (register webhook) · CP-S2-017 (retries & mark INACTIVE) | Pending / Awaiting HU implementation | - | - | - | TBD | Pending |
+| HU014 | Registro automático de eventos de auditoría | Audit / Observability | CP-S2-018 (audit on create) · CP-S2-019 (security audit) · CP-S2-020 (integrity) | **1 PASS, 2 FAIL** (BUG-009, BUG-010) | - | `HU014_auditoria.feature` | BUG-009, BUG-010 | TBD | Open |
+| HU015 | Consulta del listado de pagos con filtros | Transactions / Query API | CP-S2-021 (paginated listing) · CP-S2-022 (filter by status) · CP-S2-023 (isolation) | **0 PASS, 3 FAIL** (BUG-011, BUG-012, BUG-013) | - | `HU015_listado_pagos.feature` | BUG-011, BUG-012, BUG-013 | TBD | Open |
 
 ## Cobertura y artefactos globales
 
@@ -38,11 +38,31 @@ Objetivo: cumplir los requisitos del PAC (Cobertura unitarias ≥ 40% en SonarCl
 - Reportes Surefire (tests): `target/surefire-reports/` (por clase)
 - SonarCloud: se recomienda integrar con `sonar:sonar` y aplicar Quality Gates del PAC (Cobertura >40%, Deuda técnica <2 días, Vulnerabilidades críticas = 0).
 
+## Bugs Activos (13 bugs — ver `docs/qa/bugs.md`)
+
+| Bug ID | HU | CP | Descripción | Componente | Prioridad |
+|--------|:--:|:--:|-------------|------------|:---------:|
+| BUG-001 | HU006 | CP-S2-001 | ID de transacción en UUID en vez de `txn_*` | Transactions / Domain | P2/Medium |
+| BUG-002 | HU007 | CP-S2-005 | GET /merchant-portal/profile devuelve 403 en vez de 200 | Security / Filter | P1/High |
+| BUG-003 | HU007 | CP-S2-006 | GET /merchant-portal/profile sin auth devuelve 403 en vez de 401 | Security / Filter | P2/Medium |
+| BUG-004 | HU008 | CP-S2-007 | PATCH profile devuelve 403 en vez de 200 | Security / Filter | P1/High |
+| BUG-005 | HU008 | CP-S2-008 | PATCH profile con email diferente devuelve 403 en vez de 400 | Security / Filter | P2/Medium |
+| BUG-006 | HU012 | CP-S2-014 | PATCH /transactions/{id}/complete devuelve 403 en vez de 200 | Transactions / API | P1/High |
+| BUG-007 | HU012 | CP-S2-015 | PATCH /transactions/{id}/complete (REJECTED) devuelve 403 | Transactions / API | P1/High |
+| BUG-008 | HU012 | CP-S2-016 | PATCH /transactions/{id}/complete (ya completada) devuelve 403 | Transactions / API | P2/Medium |
+| BUG-009 | HU014 | CP-S2-019 | Campo `action` es null en auditoría de seguridad | Audit / Observability | P1/High |
+| BUG-010 | HU014 | CP-S2-020 | Escenario de integridad sin estado previo (Background incompleto) | Audit / Feature | P3/Low |
+| BUG-011 | HU015 | CP-S2-021 | GET /api/v1/transactions devuelve 403 (listado paginado) | Transactions / API | P1/High |
+| BUG-012 | HU015 | CP-S2-022 | GET /transactions?status=CREATED devuelve 403 | Transactions / API | P1/High |
+| BUG-013 | HU015 | CP-S2-023 | GET /transactions devuelve 403 (aislamiento entre comercios) | Transactions / API | P2/Medium |
+
 ## Notas y acciones recomendadas
 
-- HU005 (MFA): priorizar creación de tests unitarios y E2E para flujo challenge/verify; abrir Work Item en Azure DevOps y enlazarlo desde la columna *Bugs*.
-- Completar descripciones y tests para HU007..HU024; asignar **Owner** por HU y añadir responsabilidad en la matriz.
-- Publicar esta matriz en `/docs/quality/traceability/` y asegurarse de que los registros de defectos se mantengan en Azure DevOps (o con copia en `/docs/quality/defects/`).
+- **13 bugs abiertos** detectados en ejecución Serenity BDD del 2026-05-30. Todos corresponden a funcionalidad backend no implementada o mal configurada.
+- HU005 (MFA): priorizar creación de tests unitarios y E2E para flujo challenge/verify.
+- HU010 (Revocación): **COMPLETADO** — 3 pruebas Serenity pasaron correctamente.
+- Los 13 bugs deben registrarse como Work Items en Azure DevOps y asignarse al equipo de desarrollo.
+- Las pruebas (features/step definitions) están correctamente escritas; el backend no implementa los endpoints, filtros o formatos esperados.
 - Integrar ejecución de tests y reporte JaCoCo en CI (GitHub Actions o ADO) y subir resultados a SonarCloud para cumplir Quality Gates.
 
 ---
