@@ -1,5 +1,11 @@
 package com.codefactory.appstripe.serenity.steps;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.codefactory.appstripe.identity.application.CommerceApplicationService;
+import com.codefactory.appstripe.security.application.port.IUserRepositoryPort;
+
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import net.serenitybdd.rest.SerenityRest;
@@ -33,11 +39,13 @@ public class RevocationSteps {
             publicId = "pk_live_unknown";
         }
 
-        // Enviamos sin Authorization para simular acceso denegado por aislamiento
+        String foreignMerchantToken = ensureForeignMerchantToken();
+
+        // Enviamos un JWT de un comercio distinto para forzar el rechazo por permisos
         Response resp = SerenityRest.given()
                 .cookie("XSRF-TOKEN", context.getCsrfCookie())
                 .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                // Sin header Authorization → falta de permisos → 403
+                .header("Authorization", "Bearer " + foreignMerchantToken)
                 .when()
                 .patch("/api/v1/admin/credentials/{publicId}/revoke", publicId);
 
@@ -68,5 +76,68 @@ public class RevocationSteps {
                 .patch("/api/v1/admin/credentials/{publicId}/revoke", publicId);
 
         context.setLastResponse(resp);
+    }
+
+    private String ensureForeignMerchantToken() {
+        String email = "foreign." + context.getTimestamp() + "@test.local";
+        String password = "ForeignTest123!";
+
+        if (context.getCsrfToken() == null || context.getCsrfHeaderName() == null || context.getCsrfCookie() == null) {
+            Response csrfResp = SerenityRest.given()
+                    .when()
+                    .get("/api/v1/security/csrf")
+                    .then()
+                    .statusCode(200)
+                    .extract().response();
+
+            context.setCsrfToken(csrfResp.jsonPath().getString("token"));
+            context.setCsrfHeaderName(csrfResp.jsonPath().getString("headerName"));
+            context.setCsrfCookie(csrfResp.cookie("XSRF-TOKEN"));
+        }
+
+        CommerceApplicationService commerceApplicationService = CommonSteps.springContext().getBean(CommerceApplicationService.class);
+        IUserRepositoryPort userRepository = CommonSteps.springContext().getBean(IUserRepositoryPort.class);
+
+        commerceApplicationService.registerMerchant(
+                "Merchant Externo " + context.getTimestamp(),
+                "biz_foreign_" + context.getTimestamp(),
+                email,
+                "RETAIL");
+
+        String invitationToken = userRepository.findByEmail(email)
+                .map(user -> user.getInvitationToken())
+                .orElseThrow(() -> new IllegalStateException("No se pudo obtener el token de invitación del comercio externo"));
+
+        Map<String, Object> activate = new HashMap<>();
+        activate.put("invitationToken", invitationToken);
+        activate.put("newPassword", password);
+
+        SerenityRest.given()
+                .cookie("XSRF-TOKEN", context.getCsrfCookie())
+                .header(context.getCsrfHeaderName(), context.getCsrfToken())
+                .contentType("application/json")
+                .body(activate)
+                .when()
+                .post("/api/v1/auth/merchant/activate")
+                .then()
+                .statusCode(200);
+
+        Response loginResp = SerenityRest.given()
+                .cookie("XSRF-TOKEN", context.getCsrfCookie())
+                .header(context.getCsrfHeaderName(), context.getCsrfToken())
+                .contentType("application/json")
+                .body(Map.of("email", email, "password", password))
+                .when()
+                .post("/api/v1/auth/login")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        String token = loginResp.jsonPath().getString("token");
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException("No se pudo obtener el JWT del comercio externo");
+        }
+
+        return token;
     }
 }

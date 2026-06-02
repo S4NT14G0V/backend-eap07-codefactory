@@ -29,13 +29,16 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CredentialValidationFilter credentialValidationFilter;
+    private final ObjectMapper objectMapper;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            CredentialValidationFilter credentialValidationFilter
+            CredentialValidationFilter credentialValidationFilter,
+            ObjectMapper objectMapper
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.credentialValidationFilter = credentialValidationFilter;
+        this.objectMapper = objectMapper;
     }
 
     @Bean
@@ -90,6 +93,6 @@ public class SecurityConfig {
                 .timestamp(Instant.now())
                 .build();
 
-        new ObjectMapper().writeValue(response.getWriter(), errorResponse);
+        objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 }
