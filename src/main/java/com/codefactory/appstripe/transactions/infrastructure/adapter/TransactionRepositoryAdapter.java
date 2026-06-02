@@ -2,6 +2,7 @@ package com.codefactory.appstripe.transactions.infrastructure.adapter;
 
 import com.codefactory.appstripe.transactions.application.port.ITransactionRepositoryPort;
 import com.codefactory.appstripe.transactions.application.query.TransactionStatusCount;
+import com.codefactory.appstripe.transactions.application.query.TransactionVolumeReportItem;
 import com.codefactory.appstripe.transactions.domain.Transaction;
 import com.codefactory.appstripe.transactions.domain.TransactionStatus;
 import com.codefactory.appstripe.transactions.infrastructure.persistence.entity.TransactionJpaEntity;
@@ -66,5 +67,42 @@ public class TransactionRepositoryAdapter implements ITransactionRepositoryPort 
                 .stream()
                 .map(row -> new TransactionStatusCount(row.getStatus(), row.getTotal()))
                 .toList();
+    }
+
+    @Override
+    public List<TransactionVolumeReportItem> summarizeTransactionVolumeByDay(
+            String merchantId,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    ) {
+        return springRepository.summarizeTransactionVolumeByDay(merchantId, fromInclusive, toExclusive)
+                .stream()
+                .map(this::toTransactionVolumeReportItem)
+                .toList();
+    }
+
+    @Override
+    public List<TransactionVolumeReportItem> summarizeTransactionVolumeByMonth(
+            String merchantId,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    ) {
+        return springRepository.summarizeTransactionVolumeByMonth(merchantId, fromInclusive, toExclusive)
+                .stream()
+                .map(this::toTransactionVolumeReportItem)
+                .toList();
+    }
+
+    private TransactionVolumeReportItem toTransactionVolumeReportItem(
+            ITransactionSpringRepository.TransactionVolumeProjection row
+    ) {
+        return new TransactionVolumeReportItem(
+                row.getPeriod(),
+                row.getTransactionCount().longValue(),
+                row.getTotalAmount(),
+                row.getApprovedCount().longValue(),
+                row.getRejectedCount().longValue(),
+                row.getFailedCount().longValue()
+        );
     }
 }

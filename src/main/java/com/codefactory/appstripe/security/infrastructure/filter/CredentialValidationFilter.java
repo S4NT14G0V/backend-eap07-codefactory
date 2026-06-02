@@ -29,9 +29,16 @@ public class CredentialValidationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected boolean shouldNotFilter(jakarta.servlet.http.HttpServletRequest request) {
+        String path = request.getServletPath();
+        return !path.startsWith("/api/v1/transactions");
+    }
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         // Aplicar validación tanto para endpoints de transacciones como para el portal del comercio
         if (!request.getRequestURI().startsWith("/api/v1/transactions")

@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import com.codefactory.appstripe.transactions.api.dto.TransactionVolumeReportResponse;
+import com.codefactory.appstripe.transactions.application.query.TransactionVolumeReport;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -112,5 +114,24 @@ public class MerchantPortalController {
                 transactionApplicationService.getPaymentStatusDistribution(merchantId, from, to);
 
         return ResponseEntity.ok(PaymentStatusDistributionResponse.fromApplication(dashboard));
+    }
+
+    @GetMapping("/reports/transaction-volume")
+    public ResponseEntity<TransactionVolumeReportResponse> getTransactionVolumeReport(
+            Authentication authentication,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "DAY") String groupBy
+    ) {
+        String merchantId = extractMerchantId(authentication);
+
+        TransactionVolumeReport report = transactionApplicationService.getTransactionVolumeReport(
+                merchantId,
+                from,
+                to,
+                groupBy
+        );
+
+        return ResponseEntity.ok(TransactionVolumeReportResponse.fromApplication(report));
     }
 }

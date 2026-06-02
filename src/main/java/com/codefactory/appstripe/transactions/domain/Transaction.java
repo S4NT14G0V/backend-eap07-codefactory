@@ -1,7 +1,7 @@
 package com.codefactory.appstripe.transactions.domain;
 
 import java.math.BigDecimal;
-
+import java.time.LocalDateTime;
 import com.codefactory.appstripe.transactions.domain.exception.InvalidTransactionStateException;
 
 public class Transaction {
@@ -10,7 +10,8 @@ public class Transaction {
     private String merchantId; // id del comercio o dueño de la transaccion
     private BigDecimal amount; // monto de la transaccion
     private TransactionStatus status; // estado de la transaccion, se asigna automaticamente a CREATED
-    private BigDecimal refundedAmount; // nuevo campo para rastrear el monto reembolsado
+    private BigDecimal refundedAmount; // rastrea el monto reembolsado
+    private LocalDateTime createdAt;   // fecha de creación para reportes
 
     /*Constructor #1 para crear una transaccion COMPLETAMENTE NUEVA
     el estado inicial de las transacciones es automáticamente asignado a CREATED*/
@@ -21,6 +22,20 @@ public class Transaction {
         this.status = TransactionStatus.CREATED; // Se asigna automáticamente al nacer
     }
 
+
+    public Transaction(
+            String id,
+            String merchantId,
+            BigDecimal amount,
+            TransactionStatus status,
+            LocalDateTime createdAt
+    ) {
+        this.id = id;
+        this.merchantId = merchantId;
+        this.amount = amount;
+        this.status = status;
+        this.createdAt = createdAt == null ? LocalDateTime.now() : createdAt;
+    }
     /*Constructor 2 Para reconstruir una transacción que ya existe en la base de datos
     lo usara mapper para el paquete de infraestructura
      */
@@ -142,6 +157,9 @@ public class Transaction {
 
 
     // getters, pero se puede usan @Data de lombok
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
     public String getId() {
         return id;

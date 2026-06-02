@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -31,8 +32,62 @@ public interface ITransactionSpringRepository extends JpaRepository<TransactionJ
             @Param("toExclusive") LocalDateTime toExclusive
     );
 
+    @Query(value = """
+        SELECT
+            DATE_FORMAT(t.created_at, '%Y-%m-%d') AS period,
+            COUNT(*) AS transactionCount,
+            COALESCE(SUM(t.amount), 0) AS totalAmount,
+            COALESCE(SUM(CASE WHEN t.status = 'APPROVED' THEN 1 ELSE 0 END), 0) AS approvedCount,
+            COALESCE(SUM(CASE WHEN t.status = 'REJECTED' THEN 1 ELSE 0 END), 0) AS rejectedCount,
+            COALESCE(SUM(CASE WHEN t.status = 'FAILED' THEN 1 ELSE 0 END), 0) AS failedCount
+        FROM transactions t
+        WHERE t.merchant_id = :merchantId
+          AND t.created_at >= :fromInclusive
+          AND t.created_at < :toExclusive
+        GROUP BY DATE_FORMAT(t.created_at, '%Y-%m-%d')
+        ORDER BY DATE_FORMAT(t.created_at, '%Y-%m-%d')
+        """, nativeQuery = true)
+    List<TransactionVolumeProjection> summarizeTransactionVolumeByDay(
+            @Param("merchantId") String merchantId,
+            @Param("fromInclusive") LocalDateTime fromInclusive,
+            @Param("toExclusive") LocalDateTime toExclusive
+    );
+
+    @Query(value = """
+        SELECT
+            DATE_FORMAT(t.created_at, '%Y-%m') AS period,
+            COUNT(*) AS transactionCount,
+            COALESCE(SUM(t.amount), 0) AS totalAmount,
+            COALESCE(SUM(CASE WHEN t.status = 'APPROVED' THEN 1 ELSE 0 END), 0) AS approvedCount,
+            COALESCE(SUM(CASE WHEN t.status = 'REJECTED' THEN 1 ELSE 0 END), 0) AS rejectedCount,
+            COALESCE(SUM(CASE WHEN t.status = 'FAILED' THEN 1 ELSE 0 END), 0) AS failedCount
+        FROM transactions t
+        WHERE t.merchant_id = :merchantId
+          AND t.created_at >= :fromInclusive
+          AND t.created_at < :toExclusive
+        GROUP BY DATE_FORMAT(t.created_at, '%Y-%m')
+        ORDER BY DATE_FORMAT(t.created_at, '%Y-%m')
+        """, nativeQuery = true)
+    List<TransactionVolumeProjection> summarizeTransactionVolumeByMonth(
+            @Param("merchantId") String merchantId,
+            @Param("fromInclusive") LocalDateTime fromInclusive,
+            @Param("toExclusive") LocalDateTime toExclusive
+    );
+
+    interface TransactionVolumeProjection {
+        String getPeriod();
+        Number getTransactionCount();
+        BigDecimal getTotalAmount();
+        Number getApprovedCount();
+        Number getRejectedCount();
+        Number getFailedCount();
+    }
+
     interface StatusCountProjection {
         TransactionStatus getStatus();
         Long getTotal();
     }
+
+
+
 }

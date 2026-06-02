@@ -6,10 +6,16 @@ import com.codefactory.appstripe.transactions.application.port.ITransactionRepos
 import com.codefactory.appstripe.transactions.application.query.PaymentStatusDistribution;
 import com.codefactory.appstripe.transactions.application.query.PaymentStatusDistributionItem;
 import com.codefactory.appstripe.transactions.application.query.TransactionStatusCount;
+import com.codefactory.appstripe.transactions.application.query.TransactionVolumeReport;
 import com.codefactory.appstripe.transactions.domain.Transaction;
 import com.codefactory.appstripe.transactions.domain.TransactionStatus;
 import org.springframework.stereotype.Service;
 
+
+import com.codefactory.appstripe.transactions.application.query.TransactionVolumeGroupBy;
+import com.codefactory.appstripe.transactions.application.query.TransactionVolumeReportItem;
+
+import java.time.temporal.ChronoUnit;
 import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.List;
@@ -172,7 +178,6 @@ public class TransactionApplicationService {
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
     }
-
     public Transaction refundFull(String transactionId, String reason) {
         Transaction transaction = transactionRepositoryPort.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException(
@@ -194,8 +199,8 @@ public class TransactionApplicationService {
     }
 
     public Transaction refundPartial(String transactionId,
-                                      java.math.BigDecimal refundAmount,
-                                      String reason) {
+                                     java.math.BigDecimal refundAmount,
+                                     String reason) {
         Transaction transaction = transactionRepositoryPort.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException(
                         "Transacción no encontrada con ID: " + transactionId));
@@ -213,5 +218,49 @@ public class TransactionApplicationService {
         merchantNotifierPort.notifyRefund(saved, refundAmount, reason);
 
         return saved;
+    }
+
+    public TransactionVolumeReport getTransactionVolumeReport(
+            String merchantId,
+            LocalDate from,
+            LocalDate to,
+            String groupByValue
+    ) {
+        if (merchantId == null || merchantId.isBlank()) {
+            throw new IllegalStateException("El token no tiene un comercio asociado");
+        }
+
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("Las fechas from y to son obligatorias");
+        }
+
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("La fecha inicial no puede ser posterior a la fecha final");
+        }
+
+        long days = ChronoUnit.DAYS.between(from, to) + 1;
+        if (days > 366) {
+            throw new IllegalArgumentException("El rango de fechas no puede superar 366 días");
+        }
+
+        TransactionVolumeGroupBy groupBy = TransactionVolumeGroupBy.from(groupByValue);
+
+        LocalDateTime fromInclusive = from.atStartOfDay();
+        LocalDateTime toExclusive = to.plusDays(1).atStartOfDay();
+
+        List<TransactionVolumeReportItem> items = switch (groupBy) {
+            case DAY -> transactionRepositoryPort.summarizeTransactionVolumeByDay(
+                    merchantId,
+                    fromInclusive,
+                    toExclusive
+            );
+            case MONTH -> transactionRepositoryPort.summarizeTransactionVolumeByMonth(
+                    merchantId,
+                    fromInclusive,
+                    toExclusive
+            );
+        };
+
+        return new TransactionVolumeReport(from, to, groupBy, items);
     }
 }

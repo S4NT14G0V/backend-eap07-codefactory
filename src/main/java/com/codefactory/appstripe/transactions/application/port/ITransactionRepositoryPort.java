@@ -1,6 +1,7 @@
 package com.codefactory.appstripe.transactions.application.port;
 
 import com.codefactory.appstripe.transactions.application.query.TransactionStatusCount;
+import com.codefactory.appstripe.transactions.application.query.TransactionVolumeReportItem;
 import com.codefactory.appstripe.transactions.domain.Transaction;
 import com.codefactory.appstripe.transactions.domain.TransactionStatus;
 
@@ -24,6 +25,18 @@ public interface ITransactionRepositoryPort {
     List<TransactionStatusCount> countByMerchantIdAndStatusInAndCreatedAtBetween(
             String merchantId,
             List<TransactionStatus> statuses,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    );
+
+    List<TransactionVolumeReportItem> summarizeTransactionVolumeByDay(
+            String merchantId,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    );
+
+    List<TransactionVolumeReportItem> summarizeTransactionVolumeByMonth(
+            String merchantId,
             LocalDateTime fromInclusive,
             LocalDateTime toExclusive
     );
