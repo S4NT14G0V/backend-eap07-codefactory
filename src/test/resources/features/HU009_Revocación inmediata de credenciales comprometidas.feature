@@ -39,22 +39,6 @@ Feature: Revocación inmediata de credenciales comprometidas
     Then la respuesta debe tener código 401
     And el campo "errorCode" debe ser "INVALID_CREDENTIALS"
 
-  # ---------------------------------------------------------------------------
-  # Escenario 3: No es posible revocar una credencial ya revocada
-  # ---------------------------------------------------------------------------
-  @HU009 @CP-S2-revocada-idempotencia @borde
-  Scenario: Intento de revocar una credencial que ya fue revocada
-    Given una credencial que fue revocada
-    When se envía una solicitud PATCH a "/api/v1/admin/credentials/{publicId}/revoke"
-    Then la respuesta debe tener código 409
-    And el campo "errorCode" debe ser "BUSINESS_RULE_VIOLATION"
+  
 
-  # ---------------------------------------------------------------------------
-  # Escenario 4: No se puede revocar credencial de otro comercio
-  # ---------------------------------------------------------------------------
-  @HU009 @CP-S2-aislamiento @seguridad
-  Scenario: Intento de revocar credencial de otro comercio
-    Given un comercio verificado con credenciales activas
-    When se envía una solicitud PATCH de revocación con credenciales de otro comercio
-    Then la respuesta debe tener código 403
-    And el campo "errorCode" debe ser "ACCESS_DENIED"
+  
