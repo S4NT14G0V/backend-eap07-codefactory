@@ -88,6 +88,18 @@ public interface ITransactionSpringRepository extends JpaRepository<TransactionJ
         Long getTotal();
     }
 
+    /** Cuenta transacciones de un comercio en un rango de fechas (para decidir exportación síncrona vs asíncrona) */
+    long countByMerchantIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+            String merchantId,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    );
 
+    /** Obtiene transacciones de un comercio en un rango de fechas, ordenadas por fecha ascendente */
+    List<TransactionJpaEntity> findByMerchantIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAsc(
+            String merchantId,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    );
 
 }

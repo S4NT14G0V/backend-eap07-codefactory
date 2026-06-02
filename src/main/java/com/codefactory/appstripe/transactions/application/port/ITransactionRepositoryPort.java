@@ -41,4 +41,18 @@ public interface ITransactionRepositoryPort {
             LocalDateTime toExclusive
     );
 
+    /** Cuenta las transacciones de un comercio en un rango de fechas (para decidir síncrono vs asíncrono) */
+    long countByMerchantIdAndCreatedAtBetween(
+            String merchantId,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    );
+
+    /** Obtiene las transacciones de un comercio en un rango de fechas, ordenadas por fecha ascendente */
+    List<Transaction> findByMerchantIdAndCreatedAtBetween(
+            String merchantId,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    );
+
 }

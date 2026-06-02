@@ -81,14 +81,24 @@ public class AuthenticationService {
             throw new IllegalStateException("El email ya está en uso");
         }
 
+        String invitationToken = UUID.randomUUID().toString();
+
         User user = User.builder()
                 .email(email)
                 .role("MERCHANT")
                 .merchantId(merchantId)
-                .invitationToken(UUID.randomUUID().toString())
+                .invitationToken(invitationToken)
                 .accountActivated(false)
                 .twoFactorEnabled(false)
                 .build();
+
+        // MOCK DE ENVÍO DE CORREO: Imprimir en consola para facilitar pruebas manuales
+        System.out.println("═══════════════════════════════════════════════════════════════");
+        System.out.println("📧 INVITACIÓN DE COMERCIO (MOCK - correo simulado)");
+        System.out.println("═══════════════════════════════════════════════════════════════");
+        System.out.println("  Para:        " + email);
+        System.out.println("  Token:       " + invitationToken);
+        System.out.println("═══════════════════════════════════════════════════════════════");
 
         return userRepository.save(user);
     }

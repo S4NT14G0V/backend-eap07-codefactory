@@ -85,7 +85,7 @@ public class TransactionApplicationService {
         TransactionStatus oldStatus = transaction.getStatus();
 
         if ("APPROVED".equalsIgnoreCase(result)) {
-            transaction.approve();
+            transaction.approve(authorizationCode);
         } else if ("REJECTED".equalsIgnoreCase(result)) {
             transaction.reject();
         } else {

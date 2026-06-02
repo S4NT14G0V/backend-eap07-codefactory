@@ -32,6 +32,9 @@ public class TransactionJpaEntity {
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
 
+    @Column(name = "currency", nullable = false, length = 3)
+    private String currency = "USD";
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private TransactionStatus status;
@@ -41,6 +44,9 @@ public class TransactionJpaEntity {
 
     @Column(name = "refunded_amount", nullable = false)
     private BigDecimal refundedAmount = BigDecimal.ZERO;
+
+    @Column(name = "authorization_code")
+    private String authorizationCode;
 
     public TransactionJpaEntity() {
     }

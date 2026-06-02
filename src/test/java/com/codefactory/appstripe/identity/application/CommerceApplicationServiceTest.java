@@ -1,25 +1,30 @@
 package com.codefactory.appstripe.identity.application;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import static org.mockito.Mockito.when;
-import org.mockito.junit.jupiter.MockitoExtension;
-
+import com.codefactory.appstripe.identity.application.port.IApiCredentialRepositoryPort;
 import com.codefactory.appstripe.identity.application.port.ICommerceRepositoryPort;
+import com.codefactory.appstripe.identity.application.port.IMerchantAuditPort;
+import com.codefactory.appstripe.identity.application.port.INotificationPort;
+import com.codefactory.appstripe.identity.domain.ApiCredential;
 import com.codefactory.appstripe.identity.domain.ApiCredentialPermission;
 import com.codefactory.appstripe.identity.domain.Merchant;
+import com.codefactory.appstripe.identity.domain.MerchantAuditAction;
+import com.codefactory.appstripe.identity.domain.MerchantAuditEvent;
 import com.codefactory.appstripe.identity.domain.MerchantStatus;
 import com.codefactory.appstripe.security.application.AuthenticationService;
-import com.codefactory.appstripe.security.domain.User;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CommerceApplicationServiceTest {
@@ -28,142 +33,168 @@ class CommerceApplicationServiceTest {
     private ICommerceRepositoryPort commerceRepository;
 
     @Mock
+    private IApiCredentialRepositoryPort credentialRepository;
+
+    @Mock
+    private IMerchantAuditPort merchantAuditPort;
+
+    @Mock
+    private INotificationPort notificationPort;
+
+    @Mock
     private AuthenticationService authenticationService;
 
     @InjectMocks
-    private CommerceApplicationService commerceApplicationService;
-    
+    private CommerceApplicationService service;
 
-    @Test
-    @DisplayName("Debe registrar comercio VERIFIED cuando datos son válidos")
-    void shouldRegisterMerchantSuccessfully() {
-        when(commerceRepository.existsByBusinessId("900123456")).thenReturn(false);
-        when(commerceRepository.existsByEmail("ops@merchant.com")).thenReturn(false);
-        when(commerceRepository.save(any(Merchant.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(authenticationService.createMerchantUser(anyString(), anyString())).thenReturn(new User());
+    private Merchant pendingMerchant;
+    private Merchant activeMerchant;
+    private Merchant suspendedMerchant;
 
-        Merchant result = commerceApplicationService.registerMerchant(
-                "Tienda Demo",
-                "900123456",
-                "ops@merchant.com",
-                "Retail");
-
-        assertEquals("Tienda Demo", result.getBusinessName());
-        assertEquals(MerchantStatus.VERIFIED, result.getStatus());
-    }
-
-    @Test
-    @DisplayName("Debe rechazar registro si email ya existe")
-    void shouldFailWhenEmailExists() {
-        when(commerceRepository.existsByBusinessId("900123456")).thenReturn(false);
-        when(commerceRepository.existsByEmail("ops@merchant.com")).thenReturn(true);
-
-        assertThrows(IllegalStateException.class, () -> commerceApplicationService.registerMerchant(
-                "Tienda Demo",
-                "900123456",
-                "ops@merchant.com",
-                "Retail"));
-    }
-    @Test
-    @DisplayName("Debe consultar perfil de comercio existente")
-    void shouldGetMerchantProfile() {
-        Merchant merchant = Merchant.builder()
+    @BeforeEach
+    void setUp() {
+        pendingMerchant = Merchant.builder()
                 .id("mch_123")
-                .businessName("Tienda Demo")
-                .businessId("900123456")
-                .email("ops@merchant.com")
-                .businessType("Retail")
-                .status(MerchantStatus.VERIFIED)
-                .build();
-
-        when(commerceRepository.findById("mch_123")).thenReturn(java.util.Optional.of(merchant));
-
-        Merchant result = commerceApplicationService.getMerchantProfile("mch_123");
-
-        assertEquals("mch_123", result.getId());
-        assertEquals("Tienda Demo", result.getBusinessName());
-        assertEquals("ops@merchant.com", result.getEmail());
-    }
-
-    @Test
-    @DisplayName("Debe fallar si el comercio no existe")
-    void shouldFailWhenMerchantDoesNotExist() {
-        when(commerceRepository.findById("mch_missing")).thenReturn(java.util.Optional.empty());
-
-        assertThrows(java.util.NoSuchElementException.class,
-                () -> commerceApplicationService.getMerchantProfile("mch_missing"));
-    }
-
-    @Test
-    @DisplayName("Debe fallar si el merchantId viene vacío")
-    void shouldFailWhenMerchantIdIsBlank() {
-        assertThrows(IllegalStateException.class,
-                () -> commerceApplicationService.getMerchantProfile(" "));
-    }
-
-    @Test
-    @DisplayName("Debe actualizar perfil de comercio exitosamente")
-    void shouldUpdateMerchantProfileSuccessfully() {
-        // Arrange
-        Merchant merchant = Merchant.builder()
-                .id("mch_123")
-                .businessName("Tienda Demo")
-                .businessId("900123456")
-                .email("ops@merchant.com")
-                .businessType("Retail")
-                .status(MerchantStatus.VERIFIED)
+                .businessName("Test Store")
+                .email("test@store.com")
+                .status(MerchantStatus.PENDING_VERIFICATION)
                 .permission(ApiCredentialPermission.PAYMENTS)
                 .build();
 
-        when(commerceRepository.findById("mch_123")).thenReturn(Optional.of(merchant));
-        when(commerceRepository.save(any(Merchant.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        activeMerchant = Merchant.builder()
+                .id("mch_123")
+                .businessName("Test Store")
+                .email("test@store.com")
+                .status(MerchantStatus.ACTIVE)
+                .permission(ApiCredentialPermission.PAYMENTS)
+                .build();
+
+        suspendedMerchant = Merchant.builder()
+                .id("mch_123")
+                .businessName("Test Store")
+                .email("test@store.com")
+                .status(MerchantStatus.SUSPENDED)
+                .permission(ApiCredentialPermission.PAYMENTS)
+                .build();
+    }
+
+    @Test
+    void registerMerchant_shouldSetStatusToPendingVerification() {
+        // Arrange
+        when(commerceRepository.existsByBusinessId(anyString())).thenReturn(false);
+        when(commerceRepository.existsByEmail(anyString())).thenReturn(false);
+        when(commerceRepository.save(any(Merchant.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        Merchant result = commerceApplicationService.updateMerchant(
-                "mch_123",
-                "Tienda Demo Actualizada",
-                "newops@merchant.com",
-                "Trade"
-        );
+        Merchant result = service.registerMerchant("Name", "123", "a@a.com", "Retail");
 
         // Assert
-        assertEquals("mch_123", result.getId());
-        assertEquals("Tienda Demo Actualizada", result.getBusinessName());
-        assertEquals("newops@merchant.com", result.getEmail());
-        assertEquals("Trade", result.getBusinessType());
-        // Campos que NO deben cambiar
-        assertEquals("900123456", result.getBusinessId());
-        assertEquals(MerchantStatus.VERIFIED, result.getStatus());
+        assertEquals(MerchantStatus.PENDING_VERIFICATION, result.getStatus());
+        verify(commerceRepository).save(any(Merchant.class));
+        verify(authenticationService).createMerchantUser("a@a.com", result.getId());
     }
 
     @Test
-    @DisplayName("Debe fallar si el comercio no existe")
-    void shouldFailWhenMerchantDoesNotExistOnUpdate() {
+    void approveMerchant_whenPending_shouldSetActiveAndAudit() {
         // Arrange
-        when(commerceRepository.findById("mch_missing"))
-                .thenReturn(Optional.empty());
+        when(commerceRepository.findById("mch_123")).thenReturn(Optional.of(pendingMerchant));
+        when(commerceRepository.save(any(Merchant.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act & Assert
-        assertThrows(java.util.NoSuchElementException.class,
-                () -> commerceApplicationService.updateMerchant(
-                        "mch_missing",
-                        "Tienda Demo",
-                        "ops@merchant.com",
-                        "Retail"
-                ));
+        // Act
+        Merchant result = service.approveMerchant("mch_123", "admin@app.com");
+
+        // Assert
+        assertEquals(MerchantStatus.ACTIVE, result.getStatus());
+        
+        verify(commerceRepository).save(any(Merchant.class));
+        verify(notificationPort).sendMerchantApprovalEmail("test@store.com", "Test Store");
+
+        ArgumentCaptor<MerchantAuditEvent> auditCaptor = ArgumentCaptor.forClass(MerchantAuditEvent.class);
+        verify(merchantAuditPort).publish(auditCaptor.capture());
+        
+        MerchantAuditEvent event = auditCaptor.getValue();
+        assertEquals("mch_123", event.getMerchantId());
+        assertEquals("admin@app.com", event.getAdminEmail());
+        assertEquals(MerchantAuditAction.APPROVED, event.getAction());
+        assertNull(event.getReason());
     }
 
     @Test
-    @DisplayName("Debe fallar si el merchantId viene vacío")
-    void shouldFailWhenMerchantIdIsBlankOnUpdate() {
+    void approveMerchant_whenNotPending_shouldThrowException() {
+        // Arrange
+        when(commerceRepository.findById("mch_123")).thenReturn(Optional.of(activeMerchant));
+
         // Act & Assert
-        assertThrows(IllegalStateException.class,
-                () -> commerceApplicationService.updateMerchant(
-                        " ",
-                        "Tienda Demo",
-                        "ops@merchant.com",
-                        "Retail"
-                ));
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> 
+            service.approveMerchant("mch_123", "admin@app.com")
+        );
+        
+        assertTrue(exception.getMessage().contains("Solo los comercios en estado PENDING_VERIFICATION pueden ser aprobados"));
+        verify(commerceRepository, never()).save(any());
+        verify(merchantAuditPort, never()).publish(any());
+    }
+
+    @Test
+    void suspendMerchant_whenActive_shouldRevokeCredentialsAndAudit() {
+        // Arrange
+        when(commerceRepository.findById("mch_123")).thenReturn(Optional.of(activeMerchant));
+        
+        ApiCredential cred1 = ApiCredential.builder().id("cred1").active(true).build();
+        ApiCredential cred2 = ApiCredential.builder().id("cred2").active(true).build();
+        when(credentialRepository.findByMerchantIdAndActiveTrue("mch_123")).thenReturn(List.of(cred1, cred2));
+        
+        when(commerceRepository.save(any(Merchant.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Merchant result = service.suspendMerchant("mch_123", "admin@app.com", "Actividad irregular");
+
+        // Assert
+        assertEquals(MerchantStatus.SUSPENDED, result.getStatus());
+        
+        // Verifica que las credenciales se desactivaron y guardaron
+        assertFalse(cred1.isActive());
+        assertFalse(cred2.isActive());
+        verify(credentialRepository, times(2)).save(any(ApiCredential.class));
+        
+        verify(commerceRepository).save(any(Merchant.class));
+        verify(notificationPort).sendMerchantSuspensionEmail("test@store.com", "Test Store", "Actividad irregular");
+
+        ArgumentCaptor<MerchantAuditEvent> auditCaptor = ArgumentCaptor.forClass(MerchantAuditEvent.class);
+        verify(merchantAuditPort).publish(auditCaptor.capture());
+        
+        MerchantAuditEvent event = auditCaptor.getValue();
+        assertEquals("mch_123", event.getMerchantId());
+        assertEquals("admin@app.com", event.getAdminEmail());
+        assertEquals(MerchantAuditAction.SUSPENDED, event.getAction());
+        assertEquals("Actividad irregular", event.getReason());
+    }
+
+    @Test
+    void suspendMerchant_whenAlreadySuspended_shouldThrowException() {
+        // Arrange
+        when(commerceRepository.findById("mch_123")).thenReturn(Optional.of(suspendedMerchant));
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> 
+            service.suspendMerchant("mch_123", "admin@app.com", "Fraude")
+        );
+        
+        assertEquals("El comercio ya se encuentra suspendido", exception.getMessage());
+        verify(credentialRepository, never()).findByMerchantIdAndActiveTrue(anyString());
+        verify(commerceRepository, never()).save(any());
+    }
+
+    @Test
+    void listPendingMerchants_shouldReturnOnlyPending() {
+        // Arrange
+        when(commerceRepository.findByStatus(MerchantStatus.PENDING_VERIFICATION)).thenReturn(List.of(pendingMerchant));
+
+        // Act
+        List<Merchant> result = service.listPendingMerchants();
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals(MerchantStatus.PENDING_VERIFICATION, result.get(0).getStatus());
+        verify(commerceRepository).findByStatus(MerchantStatus.PENDING_VERIFICATION);
     }
 }

@@ -105,4 +105,28 @@ public class TransactionRepositoryAdapter implements ITransactionRepositoryPort 
                 row.getFailedCount().longValue()
         );
     }
+
+    @Override
+    public long countByMerchantIdAndCreatedAtBetween(
+            String merchantId,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    ) {
+        return springRepository.countByMerchantIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                merchantId, fromInclusive, toExclusive
+        );
+    }
+
+    @Override
+    public List<Transaction> findByMerchantIdAndCreatedAtBetween(
+            String merchantId,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    ) {
+        return springRepository.findByMerchantIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAsc(
+                merchantId, fromInclusive, toExclusive
+        ).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
 }

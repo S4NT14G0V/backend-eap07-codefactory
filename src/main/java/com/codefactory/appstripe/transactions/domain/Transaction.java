@@ -9,8 +9,10 @@ public class Transaction {
     private String id; // id de la transaccion
     private String merchantId; // id del comercio o dueño de la transaccion
     private BigDecimal amount; // monto de la transaccion
+    private String currency; // moneda de la transaccion (ISO 4217, ej: USD, COP)
     private TransactionStatus status; // estado de la transaccion, se asigna automaticamente a CREATED
     private BigDecimal refundedAmount; // rastrea el monto reembolsado
+    private String authorizationCode; // código de autorización, solo para transacciones aprobadas
     private LocalDateTime createdAt;   // fecha de creación para reportes
 
     /*Constructor #1 para crear una transaccion COMPLETAMENTE NUEVA
@@ -19,7 +21,9 @@ public class Transaction {
         this.id = id;
         this.merchantId = merchantId;
         this.amount = amount;
+        this.currency = "USD"; // Moneda por defecto
         this.status = TransactionStatus.CREATED; // Se asigna automáticamente al nacer
+        this.refundedAmount = BigDecimal.ZERO;
     }
 
 
@@ -33,7 +37,9 @@ public class Transaction {
         this.id = id;
         this.merchantId = merchantId;
         this.amount = amount;
+        this.currency = "USD";
         this.status = status;
+        this.refundedAmount = BigDecimal.ZERO;
         this.createdAt = createdAt == null ? LocalDateTime.now() : createdAt;
     }
     /*Constructor 2 Para reconstruir una transacción que ya existe en la base de datos
@@ -43,17 +49,23 @@ public class Transaction {
         this.id = id;
         this.merchantId = merchantId;
         this.amount = amount;
+        this.currency = "USD";
         this.status = status;
+        this.refundedAmount = BigDecimal.ZERO;
     }
     
-    // Constructor completo para reconstruir desde BD con refundedAmount
+    // Constructor completo para reconstruir desde BD con refundedAmount, currency y authorizationCode
     public Transaction(String id, String merchantId, BigDecimal amount,
-                       TransactionStatus status, BigDecimal refundedAmount) {
+                       TransactionStatus status, BigDecimal refundedAmount,
+                       String currency, String authorizationCode, LocalDateTime createdAt) {
         this.id = id;
         this.merchantId = merchantId;
         this.amount = amount;
+        this.currency = (currency != null) ? currency : "USD";
         this.status = status;
         this.refundedAmount = (refundedAmount != null) ? refundedAmount : BigDecimal.ZERO;
+        this.authorizationCode = authorizationCode;
+        this.createdAt = createdAt;
     }
 
     //bloquea transición si está en estado final y cambia a PROCESSING.
@@ -68,14 +80,15 @@ public class Transaction {
         this.status = TransactionStatus.PROCESSING;
     }
 
-    // Marca la transacción como aprobada (estado final)
-    public void approve() {
+    // Marca la transacción como aprobada (estado final) y almacena el código de autorización
+    public void approve(String authorizationCode) {
         if (this.status == TransactionStatus.APPROVED || this.status == TransactionStatus.REJECTED || this.status == TransactionStatus.FAILED) {
             throw new InvalidTransactionStateException(
                     "Operación bloqueada: No se puede aprobar una transacción que ya está en estado final (" + this.status + ")."
             );
         }
         this.status = TransactionStatus.APPROVED;
+        this.authorizationCode = authorizationCode;
     }
 
     // Marca la transacción como rechazada (estado final)
@@ -173,11 +186,19 @@ public class Transaction {
         return amount;
     }
 
+    public String getCurrency() {
+        return currency;
+    }
+
     public TransactionStatus getStatus() {
         return status;
     }
 
     public BigDecimal getRefundedAmount() {
         return refundedAmount;
+    }
+
+    public String getAuthorizationCode() {
+        return authorizationCode;
     }
 }

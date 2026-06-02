@@ -27,7 +27,8 @@ class TransactionRefundTest {
         // Assert
         assertEquals(TransactionStatus.REFUNDED, tx.getStatus());
         assertEquals(new BigDecimal("100.00"), tx.getRefundedAmount());
-        assertEquals(BigDecimal.ZERO, tx.getAvailableForRefund());
+        assertTrue(tx.getAvailableForRefund().compareTo(BigDecimal.ZERO) == 0,
+                "El monto disponible para reembolso debe ser cero");
     }
 
     @Test
@@ -63,7 +64,8 @@ class TransactionRefundTest {
         Transaction tx = new Transaction("tx-1", "mch-1",
                 new BigDecimal("100.00"),
                 TransactionStatus.PARTIALLY_REFUNDED,
-                new BigDecimal("30.00"));
+                new BigDecimal("30.00"),
+                "USD", null, null);
 
         // Act
         tx.refundFull();
@@ -97,7 +99,8 @@ class TransactionRefundTest {
         Transaction tx = new Transaction("tx-1", "mch-1",
                 new BigDecimal("100.00"),
                 TransactionStatus.PARTIALLY_REFUNDED,
-                new BigDecimal("80.00"));
+                new BigDecimal("80.00"),
+                "USD", null, null);
 
         // Act & Assert: intentamos devolver 50 cuando solo hay 20
         InvalidTransactionStateException ex = assertThrows(
@@ -146,6 +149,7 @@ class TransactionRefundTest {
     private Transaction approvedTransaction(String amount) {
         return new Transaction("tx-1", "mch-1",
                 new BigDecimal(amount), TransactionStatus.APPROVED,
-                BigDecimal.ZERO);
+                BigDecimal.ZERO,
+                "USD", null, null);
     }
 }

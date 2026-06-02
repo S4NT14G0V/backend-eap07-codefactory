@@ -2,10 +2,12 @@ package com.codefactory.appstripe.identity.infrastructure.adapter;
 
 import com.codefactory.appstripe.identity.application.port.ICommerceRepositoryPort;
 import com.codefactory.appstripe.identity.domain.Merchant;
+import com.codefactory.appstripe.identity.domain.MerchantStatus;
 import com.codefactory.appstripe.identity.infrastructure.persistence.entity.MerchantJpaEntity;
 import com.codefactory.appstripe.identity.infrastructure.persistence.repository.ICommerceSpringRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -37,6 +39,26 @@ public class CommerceRepositoryAdapter implements ICommerceRepositoryPort {
     public boolean existsByEmail(String email) {
         return springRepository.existsByEmail(email);
     }
+
+    @Override
+    public List<Merchant> findByStatus(MerchantStatus status) {
+        return springRepository.findByStatus(status)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Merchant> findAll() {
+        return springRepository.findAll()
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    // -------------------------------------------------------------------------
+    // Mapeos dominio ↔ entidad JPA
+    // -------------------------------------------------------------------------
 
     private MerchantJpaEntity toEntity(Merchant merchant) {
         MerchantJpaEntity entity = new MerchantJpaEntity();
