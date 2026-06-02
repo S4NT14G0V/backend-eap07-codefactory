@@ -2,6 +2,8 @@ package com.codefactory.appstripe.transactions.application;
 
 import com.codefactory.appstripe.transactions.application.port.IAuditPublisherPort;
 import com.codefactory.appstripe.transactions.application.port.ITransactionRepositoryPort;
+import com.codefactory.appstripe.transactions.application.query.PaymentStatusDistribution;
+import com.codefactory.appstripe.transactions.application.query.TransactionStatusCount;
 import com.codefactory.appstripe.transactions.domain.Transaction;
 import com.codefactory.appstripe.transactions.domain.TransactionStatus;
 import com.codefactory.appstripe.transactions.domain.exception.InvalidTransactionStateException;
@@ -12,10 +14,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import com.codefactory.appstripe.transactions.application.port.IMerchantNotifierPort;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -94,5 +100,38 @@ class TransactionApplicationServiceTest {
         verify(transactionRepositoryPort, never()).save(any(Transaction.class));
         verify(auditPublisherPort, never()).publishStatusChange(anyString(), any(), any());
         verify(merchantNotifierPort, never()).notifyProcessingStart(any(Transaction.class));
+    }
+
+    @Test
+    @DisplayName("HU020: debe calcular distribución de pagos por estado")
+    void shouldCalculatePaymentStatusDistribution() {
+        String merchantId = "mch_123";
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+
+        when(transactionRepositoryPort.countByMerchantIdAndStatusInAndCreatedAtBetween(
+                eq(merchantId),
+                anyList(),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class)
+        )).thenReturn(List.of(
+                new TransactionStatusCount(TransactionStatus.APPROVED, 8),
+                new TransactionStatusCount(TransactionStatus.REJECTED, 2),
+                new TransactionStatusCount(TransactionStatus.FAILED, 0)
+        ));
+
+        PaymentStatusDistribution result =
+                transactionApplicationService.getPaymentStatusDistribution(merchantId, from, to);
+
+        assertEquals(10, result.totalFinalized());
+        assertEquals("80.00", result.approvalRate().toPlainString());
+        assertEquals(3, result.distribution().size());
+
+        verify(transactionRepositoryPort).countByMerchantIdAndStatusInAndCreatedAtBetween(
+                eq(merchantId),
+                anyList(),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class)
+        );
     }
 }

@@ -3,6 +3,7 @@ package com.codefactory.appstripe.identity.api;
 import com.codefactory.appstripe.identity.api.dto.MerchantResponse;
 import com.codefactory.appstripe.identity.api.dto.UpdateMerchantProfileRequest;
 import com.codefactory.appstripe.identity.application.CommerceApplicationService;
+import com.codefactory.appstripe.transactions.application.TransactionApplicationService;
 import com.codefactory.appstripe.identity.application.port.IApiCredentialRepositoryPort;
 import com.codefactory.appstripe.identity.domain.ApiCredential;
 import com.codefactory.appstripe.identity.domain.ApiCredentialPermission;
@@ -29,10 +30,13 @@ class MerchantPortalControllerTest {
     private final CommerceApplicationService commerceApplicationService = mock(CommerceApplicationService.class);
     private final IApiCredentialRepositoryPort credentialRepository = mock(IApiCredentialRepositoryPort.class);
     private final ITransactionRepositoryPort transactionRepository = mock(ITransactionRepositoryPort.class);
+    private final TransactionApplicationService transactionApplicationService = mock(TransactionApplicationService.class);
+
     private final MerchantPortalController controller = new MerchantPortalController(
             commerceApplicationService,
             credentialRepository,
-            transactionRepository
+            transactionRepository,
+            transactionApplicationService
     );
 
     @Test

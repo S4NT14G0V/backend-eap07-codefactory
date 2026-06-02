@@ -21,11 +21,13 @@ public interface TransactionMapper {
         if (entity == null) {
             return null;
         }
+
         return new Transaction(
                 entity.getId(),
                 entity.getMerchantId(),
                 entity.getAmount(),
-                entity.getStatus()
+                entity.getStatus(),
+                entity.getCreatedAt()
         );
     }
 }

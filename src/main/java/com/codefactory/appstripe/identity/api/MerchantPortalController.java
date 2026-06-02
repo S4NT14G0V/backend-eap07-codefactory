@@ -1,7 +1,12 @@
 package com.codefactory.appstripe.identity.api;
 
+import java.time.LocalDate;
 import java.util.List;
 
+import com.codefactory.appstripe.transactions.api.dto.PaymentStatusDistributionResponse;
+import com.codefactory.appstripe.transactions.application.TransactionApplicationService;
+import com.codefactory.appstripe.transactions.application.query.PaymentStatusDistribution;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +14,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.codefactory.appstripe.identity.api.dto.MerchantResponse;
@@ -29,15 +35,18 @@ public class MerchantPortalController {
     private final CommerceApplicationService commerceApplicationService;
     private final IApiCredentialRepositoryPort credentialRepository;
     private final ITransactionRepositoryPort transactionRepository;
+    private final TransactionApplicationService transactionApplicationService;
 
     public MerchantPortalController(
             CommerceApplicationService commerceApplicationService,
             IApiCredentialRepositoryPort credentialRepository,
-            ITransactionRepositoryPort transactionRepository
+            ITransactionRepositoryPort transactionRepository,
+            TransactionApplicationService transactionApplicationService
     ) {
         this.commerceApplicationService = commerceApplicationService;
         this.credentialRepository = credentialRepository;
         this.transactionRepository = transactionRepository;
+        this.transactionApplicationService = transactionApplicationService;
     }
 
     @GetMapping("/profile")
@@ -90,5 +99,18 @@ public class MerchantPortalController {
         }
 
         return merchantId;
+    }
+    @GetMapping("/dashboard/payment-status-distribution")
+    public ResponseEntity<PaymentStatusDistributionResponse> getPaymentStatusDistribution(
+            Authentication authentication,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        String merchantId = extractMerchantId(authentication);
+
+        PaymentStatusDistribution dashboard =
+                transactionApplicationService.getPaymentStatusDistribution(merchantId, from, to);
+
+        return ResponseEntity.ok(PaymentStatusDistributionResponse.fromApplication(dashboard));
     }
 }

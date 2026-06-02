@@ -1,15 +1,17 @@
 package com.codefactory.appstripe.transactions.infrastructure.adapter;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.stereotype.Component;
-
 import com.codefactory.appstripe.transactions.application.port.ITransactionRepositoryPort;
+import com.codefactory.appstripe.transactions.application.query.TransactionStatusCount;
 import com.codefactory.appstripe.transactions.domain.Transaction;
+import com.codefactory.appstripe.transactions.domain.TransactionStatus;
 import com.codefactory.appstripe.transactions.infrastructure.persistence.entity.TransactionJpaEntity;
 import com.codefactory.appstripe.transactions.infrastructure.persistence.mapper.TransactionMapper;
 import com.codefactory.appstripe.transactions.infrastructure.persistence.repository.ITransactionSpringRepository;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 
 @Component
@@ -34,11 +36,6 @@ public class TransactionRepositoryAdapter implements ITransactionRepositoryPort 
         //
         TransactionJpaEntity entity = mapper.toEntity(transaction);
 
-        // Si no hay ID provisto por el dominio, generamos uno con prefijo "txn_"
-        if (entity.getId() == null || entity.getId().isBlank()) {
-            entity.setId("txn_" + java.util.UUID.randomUUID().toString());
-        }
-
         //Guarda en base de datos
         TransactionJpaEntity savedEntity = springRepository.save(entity);
 
@@ -50,6 +47,24 @@ public class TransactionRepositoryAdapter implements ITransactionRepositoryPort 
     public List<Transaction> findByMerchantId(String merchantId) {
         return springRepository.findByMerchantId(merchantId).stream()
                 .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<TransactionStatusCount> countByMerchantIdAndStatusInAndCreatedAtBetween(
+            String merchantId,
+            List<TransactionStatus> statuses,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    ) {
+        return springRepository.countByStatusForDashboard(
+                        merchantId,
+                        statuses,
+                        fromInclusive,
+                        toExclusive
+                )
+                .stream()
+                .map(row -> new TransactionStatusCount(row.getStatus(), row.getTotal()))
                 .toList();
     }
 }

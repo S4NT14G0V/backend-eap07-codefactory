@@ -1,7 +1,10 @@
 package com.codefactory.appstripe.transactions.application.port;
 
+import com.codefactory.appstripe.transactions.application.query.TransactionStatusCount;
 import com.codefactory.appstripe.transactions.domain.Transaction;
+import com.codefactory.appstripe.transactions.domain.TransactionStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +20,12 @@ public interface ITransactionRepositoryPort {
 
     // Busca transacciones por merchantId
     List<Transaction> findByMerchantId(String merchantId);
+
+    List<TransactionStatusCount> countByMerchantIdAndStatusInAndCreatedAtBetween(
+            String merchantId,
+            List<TransactionStatus> statuses,
+            LocalDateTime fromInclusive,
+            LocalDateTime toExclusive
+    );
+
 }

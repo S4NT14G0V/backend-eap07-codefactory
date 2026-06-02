@@ -1,9 +1,6 @@
 package com.codefactory.appstripe.common.api;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
+import com.codefactory.appstripe.identity.domain.exception.CredentialAccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -12,7 +9,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.codefactory.appstripe.identity.domain.exception.CredentialAccessDeniedException;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -70,6 +69,11 @@ public class GlobalExceptionHandler {
                 .traceId(UUID.randomUUID().toString())
                 .timestamp(Instant.now())
                 .build();
+    }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(buildError("BAD_REQUEST", ex.getMessage(), List.of(ex.getMessage())));
     }
 
     private String formatFieldError(FieldError error) {

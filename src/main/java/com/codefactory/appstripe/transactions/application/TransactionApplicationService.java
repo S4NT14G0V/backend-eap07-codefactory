@@ -3,9 +3,20 @@ package com.codefactory.appstripe.transactions.application;
 import com.codefactory.appstripe.transactions.application.port.IAuditPublisherPort;
 import com.codefactory.appstripe.transactions.application.port.IMerchantNotifierPort;
 import com.codefactory.appstripe.transactions.application.port.ITransactionRepositoryPort;
+import com.codefactory.appstripe.transactions.application.query.PaymentStatusDistribution;
+import com.codefactory.appstripe.transactions.application.query.PaymentStatusDistributionItem;
+import com.codefactory.appstripe.transactions.application.query.TransactionStatusCount;
 import com.codefactory.appstripe.transactions.domain.Transaction;
 import com.codefactory.appstripe.transactions.domain.TransactionStatus;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.EnumMap;
+import java.util.List;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Map;
 
 @Service
 public class TransactionApplicationService {
@@ -14,8 +25,8 @@ public class TransactionApplicationService {
     private final IMerchantNotifierPort merchantNotifierPort;
 
     public TransactionApplicationService(ITransactionRepositoryPort transactionRepositoryPort,
-            IAuditPublisherPort auditPublisherPort,
-            IMerchantNotifierPort merchantNotifierPort) {
+                                         IAuditPublisherPort auditPublisherPort,
+                                         IMerchantNotifierPort merchantNotifierPort) {
         this.transactionRepositoryPort = transactionRepositoryPort;
         this.auditPublisherPort = auditPublisherPort;
         this.merchantNotifierPort = merchantNotifierPort;
@@ -84,4 +95,81 @@ public class TransactionApplicationService {
         return saved;
     }
 
+
+    public PaymentStatusDistribution getPaymentStatusDistribution(String merchantId, LocalDate from, LocalDate to) {
+        if (merchantId == null || merchantId.isBlank()) {
+            throw new IllegalStateException("El token no tiene un comercio asociado");
+        }
+
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("Las fechas from y to son obligatorias");
+        }
+
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("La fecha inicial no puede ser posterior a la fecha final");
+        }
+
+        LocalDateTime fromInclusive = from.atStartOfDay();
+        LocalDateTime toExclusive = to.plusDays(1).atStartOfDay();
+
+        List<TransactionStatus> finalizedStatuses = List.of(
+                TransactionStatus.APPROVED,
+                TransactionStatus.REJECTED,
+                TransactionStatus.FAILED
+        );
+
+        List<TransactionStatusCount> counts =
+                transactionRepositoryPort.countByMerchantIdAndStatusInAndCreatedAtBetween(
+                        merchantId,
+                        finalizedStatuses,
+                        fromInclusive,
+                        toExclusive
+                );
+
+        Map<TransactionStatus, Long> countByStatus = new EnumMap<>(TransactionStatus.class);
+
+        for (TransactionStatus status : finalizedStatuses) {
+            countByStatus.put(status, 0L);
+        }
+
+        for (TransactionStatusCount count : counts) {
+            countByStatus.put(count.status(), count.count());
+        }
+
+        long totalFinalized = countByStatus.values()
+                .stream()
+                .mapToLong(Long::longValue)
+                .sum();
+
+        List<PaymentStatusDistributionItem> distribution = finalizedStatuses.stream()
+                .map(status -> new PaymentStatusDistributionItem(
+                        status,
+                        countByStatus.get(status),
+                        percentage(countByStatus.get(status), totalFinalized)
+                ))
+                .toList();
+
+        BigDecimal approvalRate = percentage(
+                countByStatus.get(TransactionStatus.APPROVED),
+                totalFinalized
+        );
+
+        return new PaymentStatusDistribution(
+                from,
+                to,
+                totalFinalized,
+                approvalRate,
+                distribution
+        );
+    }
+
+    private BigDecimal percentage(long count, long total) {
+        if (total == 0) {
+            return BigDecimal.ZERO.setScale(2);
+        }
+
+        return BigDecimal.valueOf(count)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
+    }
 }

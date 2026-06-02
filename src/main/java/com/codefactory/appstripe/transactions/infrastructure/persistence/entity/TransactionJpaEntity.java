@@ -1,17 +1,12 @@
 package com.codefactory.appstripe.transactions.infrastructure.persistence.entity;
 
 
-import java.math.BigDecimal;
-
 import com.codefactory.appstripe.transactions.domain.TransactionStatus;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -19,6 +14,7 @@ import lombok.Data;
 public class TransactionJpaEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(name = "merchant_id", nullable = false)
@@ -27,15 +23,16 @@ public class TransactionJpaEntity {
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
 
-    // Guarda el Enum como texto (ej. "CREATED") y no como un número (0, 1)
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private TransactionStatus status;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     public TransactionJpaEntity() {
     }
 
-    // Constructor
     public TransactionJpaEntity(String id, String merchantId, BigDecimal amount, TransactionStatus status) {
         this.id = id;
         this.merchantId = merchantId;
@@ -43,5 +40,10 @@ public class TransactionJpaEntity {
         this.status = status;
     }
 
-
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
 }
