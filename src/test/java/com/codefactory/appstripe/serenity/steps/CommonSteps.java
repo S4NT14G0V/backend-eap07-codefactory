@@ -1,6 +1,7 @@
 package com.codefactory.appstripe.serenity.steps;
 
 import com.codefactory.appstripe.AppstripeApplication;
+import lombok.Data;
 import io.cucumber.java.Before;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.ParameterType;
@@ -25,6 +26,7 @@ public class CommonSteps {
      * Contexto compartido entre steps dentro de un mismo escenario.
      * Almacena IDs, tokens, credenciales y última respuesta.
      */
+    @Data
     public static class TestContext {
         private String merchantId;
         private String publicId;
@@ -33,36 +35,13 @@ public class CommonSteps {
         private String csrfToken;
         private String csrfHeaderName;
         private String csrfCookie;
+        private String transactionId;
         private Response lastResponse;
         private long timestamp = System.currentTimeMillis();
 
-        // Getters y setters
-        public String getMerchantId() { return merchantId; }
-        public void setMerchantId(String merchantId) { this.merchantId = merchantId; }
-
-        public String getPublicId() { return publicId; }
-        public void setPublicId(String publicId) { this.publicId = publicId; }
-
-        public String getSecret() { return secret; }
-        public void setSecret(String secret) { this.secret = secret; }
-
-        public String getAdminToken() { return adminToken; }
-        public void setAdminToken(String adminToken) { this.adminToken = adminToken; }
-
-        public String getCsrfToken() { return csrfToken; }
-        public void setCsrfToken(String csrfToken) { this.csrfToken = csrfToken; }
-
-        public String getCsrfHeaderName() { return csrfHeaderName; }
-        public void setCsrfHeaderName(String csrfHeaderName) { this.csrfHeaderName = csrfHeaderName; }
-
-        public String getCsrfCookie() { return csrfCookie; }
-        public void setCsrfCookie(String csrfCookie) { this.csrfCookie = csrfCookie; }
-
-        public Response getLastResponse() { return lastResponse; }
-        public void setLastResponse(Response lastResponse) { this.lastResponse = lastResponse; }
-
-        public long getTimestamp() { return timestamp; }
-        public String getUniqueEmail(String prefix) { return prefix + "." + timestamp + "@test.local"; }
+        public String getUniqueEmail(String prefix) {
+            return prefix + "." + timestamp + "@test.local";
+        }
     }
 
     public static TestContext context() {
@@ -90,7 +69,6 @@ public class CommonSteps {
     public void setTheStage() {
         // Configurar puerto del servidor embebido
         RestAssured.port = 8083;
-        SharedContext.getInstance().reset();
         resetContext();
     }
 
