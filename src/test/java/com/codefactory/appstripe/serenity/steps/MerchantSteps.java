@@ -13,15 +13,17 @@ import java.util.Map;
  */
 public class MerchantSteps {
 
-    private final SharedContext context = SharedContext.getInstance();
+    private com.codefactory.appstripe.serenity.steps.CommonSteps.TestContext context() {
+        return CommonSteps.context();
+    }
 
     @Given("un comercio autenticado con credenciales activas")
     public void unComercioAutenticadoConCredenciales() {
         // Reutiliza el setup de credenciales activas
-        if (context.getPublicId() == null) {
+        if (context().getPublicId() == null) {
             // Obtener CSRF + login admin + crear comercio + generar credenciales
             obtenerCsrfYLoginAdmin();
-            if (context.getMerchantId() == null) {
+            if (context().getMerchantId() == null) {
                 crearComercio();
             }
             generarCredenciales();
@@ -39,7 +41,7 @@ public class MerchantSteps {
                 .when()
                 .get(endpoint);
 
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 
     /**
@@ -49,15 +51,15 @@ public class MerchantSteps {
      */
     private void getEndpointAuth(String endpoint) {
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("X-Merchant-Id", context.getMerchantId())
-                .header("X-Public-Id", context.getPublicId())
-                .header("X-Secret", context.getSecret())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("X-Merchant-Id", context().getMerchantId())
+                .header("X-Public-Id", context().getPublicId())
+                .header("X-Secret", context().getSecret())
                 .when()
                 .get(endpoint);
 
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 
     /**
@@ -67,17 +69,17 @@ public class MerchantSteps {
      */
     private void patchEndpointAuth(String endpoint, String docString) {
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("X-Merchant-Id", context.getMerchantId())
-                .header("X-Public-Id", context.getPublicId())
-                .header("X-Secret", context.getSecret())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("X-Merchant-Id", context().getMerchantId())
+                .header("X-Public-Id", context().getPublicId())
+                .header("X-Secret", context().getSecret())
                 .contentType("application/json")
                 .body(docString)
                 .when()
                 .patch(endpoint);
 
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 
     @When("se envía una solicitud PATCH a {string} con email diferente")
@@ -89,17 +91,17 @@ public class MerchantSteps {
                 """;
 
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("X-Merchant-Id", context.getMerchantId())
-                .header("X-Public-Id", context.getPublicId())
-                .header("X-Secret", context.getSecret())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("X-Merchant-Id", context().getMerchantId())
+                .header("X-Public-Id", context().getPublicId())
+                .header("X-Secret", context().getSecret())
                 .contentType("application/json")
                 .body(body)
                 .when()
                 .patch(endpoint);
 
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 
     // ========================================================================
@@ -107,7 +109,7 @@ public class MerchantSteps {
     // ========================================================================
 
     private void obtenerCsrfYLoginAdmin() {
-        if (context.getAdminToken() != null) return;
+        if (context().getAdminToken() != null) return;
 
         Response csrfResp = SerenityRest.given()
                 .when()
@@ -116,17 +118,17 @@ public class MerchantSteps {
                 .statusCode(200)
                 .extract().response();
 
-        context.setCsrfToken(csrfResp.jsonPath().getString("token"));
-        context.setCsrfHeaderName(csrfResp.jsonPath().getString("headerName"));
-        context.setCsrfCookie(csrfResp.cookie("XSRF-TOKEN"));
+        context().setCsrfToken(csrfResp.jsonPath().getString("token"));
+        context().setCsrfHeaderName(csrfResp.jsonPath().getString("headerName"));
+        context().setCsrfCookie(csrfResp.cookie("XSRF-TOKEN"));
 
         Map<String, Object> login = new HashMap<>();
         login.put("email", "admin@paycore.com");
         login.put("password", "admin123");
 
         Response loginResp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .contentType("application/json")
                 .body(login)
                 .when()
@@ -135,21 +137,21 @@ public class MerchantSteps {
                 .statusCode(200)
                 .extract().response();
 
-        context.setAdminToken(loginResp.jsonPath().getString("token"));
+        context().setAdminToken(loginResp.jsonPath().getString("token"));
     }
 
     private void crearComercio() {
         Map<String, Object> merchant = new HashMap<>();
-        String ts = String.valueOf(context.getTimestamp());
+        String ts = String.valueOf(context().getTimestamp());
         merchant.put("businessName", "Merchant Perfil " + ts);
         merchant.put("businessId", "biz_mp_" + ts);
-        merchant.put("email", context.getUniqueEmail("perfil"));
+        merchant.put("email", context().getUniqueEmail("perfil"));
         merchant.put("businessType", "RETAIL");
 
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("Authorization", "Bearer " + context.getAdminToken())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("Authorization", "Bearer " + context().getAdminToken())
                 .contentType("application/json")
                 .body(merchant)
                 .when()
@@ -158,17 +160,17 @@ public class MerchantSteps {
                 .statusCode(201)
                 .extract().response();
 
-        context.setMerchantId(resp.jsonPath().getString("id"));
+        context().setMerchantId(resp.jsonPath().getString("id"));
     }
 
     private void generarCredenciales() {
         Map<String, Object> gen = new HashMap<>();
-        gen.put("merchantId", context.getMerchantId());
+        gen.put("merchantId", context().getMerchantId());
 
         Response genResp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("Authorization", "Bearer " + context.getAdminToken())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("Authorization", "Bearer " + context().getAdminToken())
                 .contentType("application/json")
                 .body(gen)
                 .when()
@@ -177,7 +179,7 @@ public class MerchantSteps {
                 .statusCode(201)
                 .extract().response();
 
-        context.setPublicId(genResp.jsonPath().getString("publicId"));
-        context.setSecret(genResp.jsonPath().getString("secret"));
+        context().setPublicId(genResp.jsonPath().getString("publicId"));
+        context().setSecret(genResp.jsonPath().getString("secret"));
     }
 }

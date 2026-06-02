@@ -19,7 +19,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class TransactionSteps {
 
-    private final SharedContext context = SharedContext.getInstance();
+    private com.codefactory.appstripe.serenity.steps.CommonSteps.TestContext context() {
+        return CommonSteps.context();
+    }
 
     // ========================================================================
     // HU012 — Procesamiento del resultado del pago
@@ -38,12 +40,12 @@ public class TransactionSteps {
     @Given("existe una transacción en estado {string}")
     public void existeTransaccionEnEstado(String estado) {
         // Si ya tenemos una transacción, la reutilizamos
-        if (context.getTransactionId() != null) {
+        if (context().getTransactionId() != null) {
             return;
         }
 
         // Asegurar que tenemos comercio y credenciales
-        if (context.getMerchantId() == null || context.getPublicId() == null) {
+        if (context().getMerchantId() == null || context().getPublicId() == null) {
             // Usar un step interno: esto normalmente se haría con credenciales existentes
             crearTransaccion();
             return;
@@ -54,7 +56,7 @@ public class TransactionSteps {
 
     @Given("existen transacciones creadas para el comercio actual")
     public void existenTransaccionesCreadas() {
-        if (context.getTransactionId() == null) {
+        if (context().getTransactionId() == null) {
             existeTransaccionEnEstado("CREATED");
         }
     }
@@ -62,7 +64,7 @@ public class TransactionSteps {
     @Given("dos comercios diferentes con transacciones creadas")
     public void dosComerciosConTransacciones() {
         // Aseguramos que el primer comercio tenga al menos una transacción
-        if (context.getTransactionId() == null) {
+        if (context().getTransactionId() == null) {
             existeTransaccionEnEstado("CREATED");
         }
         // En un escenario real, crearíamos otro comercio. Para propósitos de la prueba,
@@ -71,7 +73,7 @@ public class TransactionSteps {
 
     @Given("una transacción en estado {string}")
     public void unaTransaccionEnEstado(String estado) {
-        if (context.getTransactionId() != null) {
+        if (context().getTransactionId() != null) {
             return;
         }
         existeTransaccionEnEstado(estado);
@@ -92,14 +94,14 @@ public class TransactionSteps {
         body.put("authorizationCode", "AUTH-99999");
 
         String endpoint = "/api/v1/transactions/{id}/complete"
-                .replace("{id}", context.getTransactionId());
+                .replace("{id}", context().getTransactionId());
 
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("X-Merchant-Id", context.getMerchantId())
-                .header("X-Public-Id", context.getPublicId())
-                .header("X-Secret", context.getSecret())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("X-Merchant-Id", context().getMerchantId())
+                .header("X-Public-Id", context().getPublicId())
+                .header("X-Secret", context().getSecret())
                 .contentType("application/json")
                 .body(body)
                 .when()
@@ -110,7 +112,7 @@ public class TransactionSteps {
 
     @Given("existen transacciones para el comercio actual")
     public void existenTransaccionesParaElComercio() {
-        if (context.getTransactionId() == null) {
+        if (context().getTransactionId() == null) {
             existeTransaccionEnEstado("CREATED");
         }
     }
@@ -118,37 +120,37 @@ public class TransactionSteps {
     @When("se envía una solicitud PATCH a {string} con:")
     public void patchConBody(String endpoint, String docString) {
         String resolvedEndpoint = endpoint
-                .replace("{transactionId}", context.getTransactionId() != null ?
-                        context.getTransactionId() : "txn_placeholder")
-                .replace("{publicId}", context.getPublicId() != null ?
-                        context.getPublicId() : "pk_placeholder");
+                .replace("{transactionId}", context().getTransactionId() != null ?
+                        context().getTransactionId() : "txn_placeholder")
+                .replace("{publicId}", context().getPublicId() != null ?
+                        context().getPublicId() : "pk_placeholder");
 
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("X-Merchant-Id", context.getMerchantId())
-                .header("X-Public-Id", context.getPublicId())
-                .header("X-Secret", context.getSecret())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("X-Merchant-Id", context().getMerchantId())
+                .header("X-Public-Id", context().getPublicId())
+                .header("X-Secret", context().getSecret())
                 .contentType("application/json")
                 .body(docString)
                 .when()
                 .patch(resolvedEndpoint);
 
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 
     @When("se envía una solicitud GET a {string}")
     public void getEndpoint(String endpoint) {
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("X-Merchant-Id", context.getMerchantId())
-                .header("X-Public-Id", context.getPublicId())
-                .header("X-Secret", context.getSecret())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("X-Merchant-Id", context().getMerchantId())
+                .header("X-Public-Id", context().getPublicId())
+                .header("X-Secret", context().getSecret())
                 .when()
                 .get(endpoint);
 
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 
     @When("el comercio A consulta su listado de pagos")
@@ -162,7 +164,7 @@ public class TransactionSteps {
 
     @Then("la respuesta debe tener código {int}")
     public void laRespuestaDebeTenerCodigo(int statusCode) {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
         assertEquals(statusCode, resp.statusCode(),
                 "Código de estado esperado: " + statusCode +
@@ -172,7 +174,7 @@ public class TransactionSteps {
 
     @Then("el campo {string} debe ser {string}")
     public void elCampoDebeSer(String campo, String valorEsperado) {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
 
         Object valorActual = resp.jsonPath().get(campo);
@@ -180,10 +182,10 @@ public class TransactionSteps {
 
         // Si el valor esperado tiene placeholders, reemplazarlos
         String valorResuelto = valorEsperado
-                .replace("{merchantId}", context.getMerchantId() != null ?
-                        context.getMerchantId() : "")
-                .replace("{publicId}", context.getPublicId() != null ?
-                        context.getPublicId() : "");
+                .replace("{merchantId}", context().getMerchantId() != null ?
+                        context().getMerchantId() : "")
+                .replace("{publicId}", context().getPublicId() != null ?
+                        context().getPublicId() : "");
 
         assertEquals(valorResuelto, valorActual.toString(),
                 "Campo '" + campo + "' debería ser '" + valorResuelto + "'");
@@ -191,7 +193,7 @@ public class TransactionSteps {
 
     @Then("el campo {string} debe coincidir con el patrón {string}")
     public void elCampoDebeCoincidirConPatron(String campo, String patron) {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
 
         String valorActual = resp.jsonPath().getString(campo);
@@ -205,7 +207,7 @@ public class TransactionSteps {
 
     @Then("el campo {string} debe ser un texto no vacío")
     public void elCampoDebeSerTextoNoVacio(String campo) {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
         String valor = resp.jsonPath().getString(campo);
         assertNotNull(valor, "El campo '" + campo + "' no debe ser nulo");
@@ -214,7 +216,7 @@ public class TransactionSteps {
 
     @Then("el campo {string} debe ser un email válido")
     public void elCampoDebeSerEmailValido(String campo) {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
         String valor = resp.jsonPath().getString(campo);
         assertNotNull(valor, "El campo '" + campo + "' no debe ser nulo");
@@ -223,7 +225,7 @@ public class TransactionSteps {
 
     @Then("el campo {string} debe ser false")
     public void elCampoDebeSerFalse(String campo) {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
         Boolean valor = resp.jsonPath().getBoolean(campo);
         assertNotNull(valor, "El campo '" + campo + "' no debe ser nulo");
@@ -232,7 +234,7 @@ public class TransactionSteps {
 
     @Then("la respuesta debe contener una lista de transacciones")
     public void laRespuestaDebeContenerLista() {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
 
         // Verificar que hay al menos un elemento o un array vacío
@@ -242,7 +244,7 @@ public class TransactionSteps {
 
     @Then("la respuesta debe incluir metadatos de paginación")
     public void laRespuestaDebeIncluirPaginacion() {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
         assertNotNull(resp.jsonPath().get("page"), "Debe incluir 'page'");
         assertNotNull(resp.jsonPath().get("size"), "Debe incluir 'size'");
@@ -251,7 +253,7 @@ public class TransactionSteps {
 
     @Then("todas las transacciones en la lista deben tener status {string}")
     public void todasLasTransaccionesDebenTenerStatus(String statusEsperado) {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
 
         List<Map<String, Object>> content = resp.jsonPath().getList("content");
@@ -265,7 +267,7 @@ public class TransactionSteps {
 
     @Then("no debe ver transacciones del comercio B")
     public void noDebeVerTransaccionesDeOtroComercio() {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
 
         String body = resp.body().asString();
@@ -280,7 +282,7 @@ public class TransactionSteps {
             for (Map<String, Object> tx : content) {
                 String merchantId = (String) tx.get("merchantId");
                 if (merchantId != null) {
-                    assertEquals(context.getMerchantId(), merchantId,
+                    assertEquals(context().getMerchantId(), merchantId,
                             "No debe ver transacciones de otro comercio");
                 }
             }
@@ -293,20 +295,20 @@ public class TransactionSteps {
 
     private void crearTransaccion() {
         // Asegurar que tenemos credenciales
-        if (context.getPublicId() == null) {
+        if (context().getPublicId() == null) {
             return; // El escenario fallará por falta de credenciales
         }
 
         Map<String, Object> tx = new HashMap<>();
-        tx.put("merchantId", context.getMerchantId());
+        tx.put("merchantId", context().getMerchantId());
         tx.put("amount", 50000);
 
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("X-Merchant-Id", context.getMerchantId())
-                .header("X-Public-Id", context.getPublicId())
-                .header("X-Secret", context.getSecret())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("X-Merchant-Id", context().getMerchantId())
+                .header("X-Public-Id", context().getPublicId())
+                .header("X-Secret", context().getSecret())
                 .contentType("application/json")
                 .body(tx)
                 .when()
@@ -315,7 +317,7 @@ public class TransactionSteps {
                 .statusCode(201)
                 .extract().response();
 
-        context.setTransactionId(resp.jsonPath().getString("id"));
-        context.setLastResponse(resp);
+        context().setTransactionId(resp.jsonPath().getString("id"));
+        context().setLastResponse(resp);
     }
 }

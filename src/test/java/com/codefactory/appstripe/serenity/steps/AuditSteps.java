@@ -13,42 +13,44 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class AuditSteps {
 
-    private final SharedContext context = SharedContext.getInstance();
+    private com.codefactory.appstripe.serenity.steps.CommonSteps.TestContext context() {
+        return CommonSteps.context();
+    }
 
     @When("se crea una transacción exitosamente")
     public void seCreaUnaTransaccionExitosamente() {
-        if (context.getMerchantId() == null || context.getPublicId() == null) {
+        if (context().getMerchantId() == null || context().getPublicId() == null) {
             fail("Se requiere comercio y credenciales activas");
         }
         String body = """
                 { "merchantId": "%s", "amount": 15000 }
-                """.formatted(context.getMerchantId());
+                """.formatted(context().getMerchantId());
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("X-Merchant-Id", context.getMerchantId())
-                .header("X-Public-Id", context.getPublicId())
-                .header("X-Secret", context.getSecret())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("X-Merchant-Id", context().getMerchantId())
+                .header("X-Public-Id", context().getPublicId())
+                .header("X-Secret", context().getSecret())
                 .contentType("application/json").body(body).when()
                 .post("/api/v1/transactions").then().statusCode(201).extract().response();
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 
     @When("se envía una solicitud inválida con credenciales falsas")
     public void seEnviaSolicitudInvalida() {
-        String mid = context.getMerchantId() != null ? context.getMerchantId() : "mch_fake_001";
+        String mid = context().getMerchantId() != null ? context().getMerchantId() : "mch_fake_001";
         String body = """
                 { "merchantId": "%s", "amount": 10000 }
                 """.formatted(mid);
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", mid)
                 .header("X-Public-Id", "pk_live_fake")
                 .header("X-Secret", "sk_live_fake")
                 .contentType("application/json").body(body).when()
                 .post("/api/v1/transactions").then().statusCode(401).extract().response();
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 
     @When("se realizan múltiples operaciones")
@@ -63,7 +65,7 @@ public class AuditSteps {
 
     @Then("se debe haber registrado un evento de auditoría")
     public void seDebeHaberRegistradoEventoAuditoria() {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta");
         assertTrue(resp.statusCode() == 201 || resp.statusCode() == 200,
                 "La respuesta debe indicar éxito (200/201), pero fue: " + resp.statusCode());
@@ -71,7 +73,7 @@ public class AuditSteps {
 
     @Then("se debe haber registrado un evento de auditoría de seguridad")
     public void seDebeHaberRegistradoEventoAuditoriaSeguridad() {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta");
         // Para intentos no autorizados, esperamos 401
         // El evento de auditoría se registró internamente en el backend
@@ -81,7 +83,7 @@ public class AuditSteps {
 
     @Then("el evento debe contener {string}, {string} y {string}")
     public void elEventoDebeContener(String c1, String c2, String c3) {
-        Response resp = context.getLastResponse();
+        Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta previa");
         if (c1.equals("transactionId")) {
             assertNotNull(resp.jsonPath().get("id"));
