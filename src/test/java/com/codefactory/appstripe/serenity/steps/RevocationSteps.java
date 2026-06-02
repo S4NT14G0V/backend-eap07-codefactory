@@ -14,7 +14,9 @@ import net.serenitybdd.rest.SerenityRest;
  */
 public class RevocationSteps {
 
-    private final SharedContext context = SharedContext.getInstance();
+    private CommonSteps.TestContext context() {
+        return CommonSteps.context();
+    }
 
     /**
      * HU009 - Escenario 4: intenta revocar la credencial del comercio actual
@@ -28,20 +30,20 @@ public class RevocationSteps {
      */
     @When("se envía una solicitud PATCH de revocación con credenciales de otro comercio")
     public void patchRevocationWithForeignMerchantCredentials() {
-        String publicId = context.getPublicId();
+        String publicId = context().getPublicId();
         if (publicId == null) {
             publicId = "pk_live_unknown";
         }
 
         // Enviamos sin Authorization para simular acceso denegado por aislamiento
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 // Sin header Authorization → falta de permisos → 403
                 .when()
                 .patch("/api/v1/admin/credentials/{publicId}/revoke", publicId);
 
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 
     /**
@@ -58,15 +60,15 @@ public class RevocationSteps {
      */
     @When("se intenta revocar nuevamente la credencial ya revocada")
     public void patchRevokeAlreadyRevokedCredential() {
-        String publicId = context.getPublicId();
+        String publicId = context().getPublicId();
 
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context.getCsrfCookie())
-                .header(context.getCsrfHeaderName(), context.getCsrfToken())
-                .header("Authorization", "Bearer " + context.getAdminToken())
+                .cookie("XSRF-TOKEN", context().getCsrfCookie())
+                .header(context().getCsrfHeaderName(), context().getCsrfToken())
+                .header("Authorization", "Bearer " + context().getAdminToken())
                 .when()
                 .patch("/api/v1/admin/credentials/{publicId}/revoke", publicId);
 
-        context.setLastResponse(resp);
+        context().setLastResponse(resp);
     }
 }
