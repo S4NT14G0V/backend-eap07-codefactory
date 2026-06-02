@@ -72,7 +72,7 @@ class CredentialControllerTest {
                 .active(false)
                 .build();
 
-        when(credentialApplicationService.revokeCredential("pk_live_123")).thenReturn(revoked);
+        when(credentialApplicationService.revokeCredentialAsAdmin("pk_live_123")).thenReturn(revoked);
 
         mockMvc.perform(patch("/api/v1/admin/credentials/pk_live_123/revoke"))
                 .andExpect(status().isOk())
@@ -83,7 +83,7 @@ class CredentialControllerTest {
     @Test
     @DisplayName("Debe retornar 404 al revocar credencial inexistente")
     void shouldReturnNotFoundWhenCredentialDoesNotExist() throws Exception {
-        when(credentialApplicationService.revokeCredential(anyString()))
+        when(credentialApplicationService.revokeCredentialAsAdmin(anyString()))
                 .thenThrow(new NoSuchElementException("Credencial no encontrada: pk_missing"));
 
         mockMvc.perform(patch("/api/v1/admin/credentials/pk_missing/revoke"))

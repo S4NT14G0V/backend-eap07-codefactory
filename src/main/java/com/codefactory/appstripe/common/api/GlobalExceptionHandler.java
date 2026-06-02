@@ -1,5 +1,9 @@
 package com.codefactory.appstripe.common.api;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -7,9 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
+import com.codefactory.appstripe.identity.domain.exception.CredentialAccessDeniedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -45,6 +47,12 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(status)
                 .body(buildError(code, ex.getMessage(), List.of(ex.getMessage())));
+    }
+
+    @ExceptionHandler(CredentialAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleCredentialAccessDenied(CredentialAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(buildError("ACCESS_DENIED", ex.getMessage(), List.of(ex.getMessage())));
     }
 
     private ErrorResponse buildError(String code, String message, List<String> details) {

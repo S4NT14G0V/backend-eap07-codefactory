@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import com.codefactory.appstripe.security.infrastructure.filter.CredentialValidationFilter;
 import com.codefactory.appstripe.security.infrastructure.filter.JwtAuthenticationFilter;
+import com.codefactory.appstripe.security.infrastructure.config.SecurityConfig;
 
 import java.math.BigDecimal;
 
@@ -30,6 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     excludeFilters = {
         @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = CredentialValidationFilter.class),
         @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class)
+      ,
+      @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfig.class)
     }
 )
 @AutoConfigureMockMvc(addFilters = false)

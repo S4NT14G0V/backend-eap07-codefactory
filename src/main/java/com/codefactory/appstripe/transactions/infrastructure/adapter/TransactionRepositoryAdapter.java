@@ -1,14 +1,15 @@
 package com.codefactory.appstripe.transactions.infrastructure.adapter;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Component;
+
 import com.codefactory.appstripe.transactions.application.port.ITransactionRepositoryPort;
 import com.codefactory.appstripe.transactions.domain.Transaction;
 import com.codefactory.appstripe.transactions.infrastructure.persistence.entity.TransactionJpaEntity;
 import com.codefactory.appstripe.transactions.infrastructure.persistence.mapper.TransactionMapper;
 import com.codefactory.appstripe.transactions.infrastructure.persistence.repository.ITransactionSpringRepository;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Optional;
 
 
 @Component
@@ -32,6 +33,11 @@ public class TransactionRepositoryAdapter implements ITransactionRepositoryPort 
     public Transaction save(Transaction transaction) {
         //
         TransactionJpaEntity entity = mapper.toEntity(transaction);
+
+        // Si no hay ID provisto por el dominio, generamos uno con prefijo "txn_"
+        if (entity.getId() == null || entity.getId().isBlank()) {
+            entity.setId("txn_" + java.util.UUID.randomUUID().toString());
+        }
 
         //Guarda en base de datos
         TransactionJpaEntity savedEntity = springRepository.save(entity);

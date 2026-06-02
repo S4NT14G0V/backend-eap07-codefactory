@@ -8,4 +8,7 @@ public interface IMerchantNotifierPort {
 
     // Envía la notificación al comercio
     void notifyProcessingStart(Transaction transaction);
+    
+    // Notifica el resultado final del procesamiento al comercio
+    void notifyProcessingCompletion(Transaction transaction, String result, String authorizationCode, String rejectionReason);
 }

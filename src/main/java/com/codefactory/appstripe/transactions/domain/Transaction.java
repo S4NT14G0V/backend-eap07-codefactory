@@ -1,8 +1,8 @@
 package com.codefactory.appstripe.transactions.domain;
 
-import com.codefactory.appstripe.transactions.domain.exception.InvalidTransactionStateException;
-
 import java.math.BigDecimal;
+
+import com.codefactory.appstripe.transactions.domain.exception.InvalidTransactionStateException;
 
 public class Transaction {
 
@@ -40,6 +40,26 @@ public class Transaction {
         }
         // Si no está en estado final, se puede cambiar a PROCESSING
         this.status = TransactionStatus.PROCESSING;
+    }
+
+    // Marca la transacción como aprobada (estado final)
+    public void approve() {
+        if (this.status == TransactionStatus.APPROVED || this.status == TransactionStatus.REJECTED || this.status == TransactionStatus.FAILED) {
+            throw new InvalidTransactionStateException(
+                    "Operación bloqueada: No se puede aprobar una transacción que ya está en estado final (" + this.status + ")."
+            );
+        }
+        this.status = TransactionStatus.APPROVED;
+    }
+
+    // Marca la transacción como rechazada (estado final)
+    public void reject() {
+        if (this.status == TransactionStatus.APPROVED || this.status == TransactionStatus.REJECTED || this.status == TransactionStatus.FAILED) {
+            throw new InvalidTransactionStateException(
+                    "Operación bloqueada: No se puede rechazar una transacción que ya está en estado final (" + this.status + ")."
+            );
+        }
+        this.status = TransactionStatus.REJECTED;
     }
 
     // getters, pero se puede usan @Data de lombok

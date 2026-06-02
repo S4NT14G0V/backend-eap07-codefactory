@@ -33,7 +33,9 @@ public class CredentialValidationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        if (!request.getRequestURI().startsWith("/api/v1/transactions")) {
+        // Aplicar validación tanto para endpoints de transacciones como para el portal del comercio
+        if (!request.getRequestURI().startsWith("/api/v1/transactions")
+            && !request.getRequestURI().startsWith("/api/v1/merchant-portal")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -72,6 +74,14 @@ public class CredentialValidationFilter extends OncePerRequestFilter {
                     "Sus credenciales no tienen permiso para esta operación");
             return;
         }
+        // Crear un Authentication para que Spring Security reconozca al comercio
+        org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+            new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                credential.getPublicId(), credential.getMerchantId(),
+                java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_MERCHANT"))
+            );
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+
         filterChain.doFilter(request, response);
     }
 

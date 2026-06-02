@@ -57,4 +57,27 @@ public class TransactionApplicationService {
                 .orElseThrow(() -> new RuntimeException("Transacción no encontrada con ID: " + transactionId));
     }
 
+    public Transaction completeTransaction(String transactionId, String result, String authorizationCode, String rejectionReason) {
+        Transaction transaction = transactionRepositoryPort.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transacción no encontrada con ID: " + transactionId));
+
+        TransactionStatus oldStatus = transaction.getStatus();
+
+        if ("APPROVED".equalsIgnoreCase(result)) {
+            transaction.approve();
+        } else if ("REJECTED".equalsIgnoreCase(result)) {
+            transaction.reject();
+        } else {
+            throw new RuntimeException("Resultado desconocido: " + result);
+        }
+
+        Transaction saved = transactionRepositoryPort.save(transaction);
+
+        auditPublisherPort.publishStatusChange(saved.getId(), oldStatus, saved.getStatus());
+
+        merchantNotifierPort.notifyProcessingCompletion(saved, result, authorizationCode, rejectionReason);
+
+        return saved;
+    }
+
 }
