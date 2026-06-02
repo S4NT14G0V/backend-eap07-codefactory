@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -60,18 +61,19 @@ public class MerchantPortalController {
         return ResponseEntity.ok(transactions);
     }
 
+    @PatchMapping("/profile")
     @PutMapping("/update-profile")
-    public ResponseEntity<MerchantResponse> putProfile(Authentication authentication ,
-        @Valid @RequestBody UpdateMerchantProfileRequest request) {
-        
+    public ResponseEntity<MerchantResponse> putProfile(
+            Authentication authentication,
+            @Valid @RequestBody UpdateMerchantProfileRequest request) {
+
         String merchantId = extractMerchantId(authentication);
         Merchant merchant = commerceApplicationService.updateMerchant(
                 merchantId,
-            request.getBusinessName(),
-            request.getEmail(),
-            request.getBusinessType()
+                request.getBusinessName(),
+                request.getEmail(),
+                request.getBusinessType()
         );
-        
 
         return ResponseEntity.ok(MerchantResponse.fromDomain(merchant));
     }

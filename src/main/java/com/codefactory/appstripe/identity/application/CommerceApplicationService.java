@@ -61,14 +61,18 @@ public class CommerceApplicationService {
 
         Merchant oldMerchant = getMerchantProfile(merchantId);
 
+        String businessName = newName != null ? newName : oldMerchant.getBusinessName();
+        String email = newEmail != null ? newEmail : oldMerchant.getEmail();
+        String businessType = newType != null ? newType : oldMerchant.getBusinessType();
+
         Merchant updated = Merchant.builder()
                 .id(oldMerchant.getId())
                 .businessId(oldMerchant.getBusinessId())
                 .status(oldMerchant.getStatus())
                 .permission(oldMerchant.getPermission())
-                .businessName(newName)
-                .email(newEmail)
-                .businessType(newType)
+            .businessName(businessName)
+            .email(email)
+            .businessType(businessType)
                 .build();
 
         return commerceRepository.save(updated);
