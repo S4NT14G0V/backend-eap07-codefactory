@@ -1,7 +1,9 @@
 package com.codefactory.appstripe.serenity.steps;
 
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+
 import com.codefactory.appstripe.AppstripeApplication;
-import lombok.Data;
 import io.cucumber.java.Before;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.ParameterType;
@@ -9,8 +11,6 @@ import io.cucumber.java.en.Given;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import net.serenitybdd.rest.SerenityRest;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * Steps comunes compartidos por todos los features.
@@ -53,6 +53,10 @@ public class CommonSteps {
 
     public static void resetContext() {
         contextHolder.remove();
+    }
+
+    public static ConfigurableApplicationContext springContext() {
+        return springContext;
     }
 
     @BeforeAll
