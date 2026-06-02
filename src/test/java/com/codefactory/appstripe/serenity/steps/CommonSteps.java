@@ -8,8 +8,11 @@ import io.cucumber.java.Before;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.ParameterType;
 import io.cucumber.java.en.Given;
+
+
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
+import lombok.Data;
 import net.serenitybdd.rest.SerenityRest;
 
 /**
