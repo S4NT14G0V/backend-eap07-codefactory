@@ -10,6 +10,7 @@ public class Transaction {
     private String merchantId; // id del comercio o dueño de la transaccion
     private BigDecimal amount; // monto de la transaccion
     private TransactionStatus status; // estado de la transaccion, se asigna automaticamente a CREATED
+    private BigDecimal refundedAmount; // nuevo campo para rastrear el monto reembolsado
 
     /*Constructor #1 para crear una transaccion COMPLETAMENTE NUEVA
     el estado inicial de las transacciones es automáticamente asignado a CREATED*/
@@ -28,6 +29,16 @@ public class Transaction {
         this.merchantId = merchantId;
         this.amount = amount;
         this.status = status;
+    }
+    
+    // Constructor completo para reconstruir desde BD con refundedAmount
+    public Transaction(String id, String merchantId, BigDecimal amount,
+                       TransactionStatus status, BigDecimal refundedAmount) {
+        this.id = id;
+        this.merchantId = merchantId;
+        this.amount = amount;
+        this.status = status;
+        this.refundedAmount = (refundedAmount != null) ? refundedAmount : BigDecimal.ZERO;
     }
 
     //bloquea transición si está en estado final y cambia a PROCESSING.
@@ -62,6 +73,74 @@ public class Transaction {
         this.status = TransactionStatus.REJECTED;
     }
 
+    /**
+     * Reembolsa el pago en su totalidad.
+     * Regla 1: Solo se puede reembolsar si el estado es APPROVED o PARTIALLY_REFUNDED.
+     * Regla 2: Si ya fue reembolsado totalmente, lanza excepción.
+     */
+    public void refundFull() {
+        if (this.status == TransactionStatus.REFUNDED) {
+            throw new InvalidTransactionStateException(
+                "Este pago ya fue reembolsado en su totalidad. " +
+                "No es posible procesar otro reembolso.");
+        }
+        if (this.status != TransactionStatus.APPROVED
+                && this.status != TransactionStatus.PARTIALLY_REFUNDED) {
+            throw new InvalidTransactionStateException(
+                "No se puede reembolsar un pago que no está aprobado. " +
+                "Estado actual: " + this.status);
+        }
+        this.refundedAmount = this.amount;
+        this.status = TransactionStatus.REFUNDED;
+    }
+
+        /**
+     * Reembolsa un monto parcial del pago.
+     * Regla 1: Solo se puede reembolsar si el estado es APPROVED o PARTIALLY_REFUNDED.
+     * Regla 2: El monto solicitado no puede superar el disponible para reembolso.
+     * Regla 3: Si el monto reembolsado acumulado iguala el total, pasa a REFUNDED.
+     */
+    public void refundPartial(BigDecimal refundAmount) {
+        if (refundAmount == null || refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidTransactionStateException(
+                "El monto del reembolso debe ser mayor a cero.");
+        }
+        if (this.status == TransactionStatus.REFUNDED) {
+            throw new InvalidTransactionStateException(
+                "Este pago ya fue reembolsado en su totalidad. " +
+                "No es posible procesar otro reembolso.");
+        }
+        if (this.status != TransactionStatus.APPROVED
+                && this.status != TransactionStatus.PARTIALLY_REFUNDED) {
+            throw new InvalidTransactionStateException(
+                "No se puede reembolsar un pago que no está aprobado. " +
+                "Estado actual: " + this.status);
+        }
+
+        BigDecimal available = this.amount.subtract(this.refundedAmount);
+        if (refundAmount.compareTo(available) > 0) {
+            throw new InvalidTransactionStateException(
+                "El monto solicitado (" + refundAmount + ") supera el disponible " +
+                "para reembolso (" + available + ").");
+        }
+
+        this.refundedAmount = this.refundedAmount.add(refundAmount);
+
+        // Si ya se reembolsó todo, cambia a estado final REFUNDED
+        if (this.refundedAmount.compareTo(this.amount) == 0) {
+            this.status = TransactionStatus.REFUNDED;
+        } else {
+            this.status = TransactionStatus.PARTIALLY_REFUNDED;
+        }
+    }
+
+
+    /** Calcula cuánto queda disponible para reembolsar. */
+    public BigDecimal getAvailableForRefund() {
+        return this.amount.subtract(this.refundedAmount);
+    }
+
+
     // getters, pero se puede usan @Data de lombok
 
     public String getId() {
@@ -78,5 +157,9 @@ public class Transaction {
 
     public TransactionStatus getStatus() {
         return status;
+    }
+
+    public BigDecimal getRefundedAmount() {
+        return refundedAmount;
     }
 }

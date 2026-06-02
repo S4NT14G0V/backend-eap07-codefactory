@@ -17,4 +17,14 @@ public class MerchantNotifierAdapter implements IMerchantNotifierPort {
     public void notifyProcessingCompletion(Transaction transaction, String result, String authorizationCode, String rejectionReason) {
         System.out.println("Notificando resultado al comercio para transaccion " + transaction.getId() + ": result=" + result + ", authCode=" + authorizationCode + ", reason=" + rejectionReason);
     }
+
+    @Override
+    public void notifyRefund(Transaction transaction,
+                              java.math.BigDecimal refundedAmount,
+                              String reason) {
+        System.out.println("Notificando reembolso al comercio para transaccion "
+                + transaction.getId()
+                + ": monto=" + refundedAmount
+                + ", motivo=" + reason);
+    }
 }

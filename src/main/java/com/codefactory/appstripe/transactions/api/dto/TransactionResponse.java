@@ -3,6 +3,8 @@ package com.codefactory.appstripe.transactions.api.dto;
 import java.math.BigDecimal;
 
 import com.codefactory.appstripe.transactions.domain.Transaction;
+import com.codefactory.appstripe.transactions.domain.TransactionStatus;
+
 
 import lombok.Builder;
 import lombok.Value;
@@ -15,15 +17,36 @@ public class TransactionResponse {
     BigDecimal amount;
     String status;
     String result;
+    BigDecimal refundedAmount;   
+    BigDecimal availableForRefund; 
 
     public static TransactionResponse fromDomain(Transaction transaction) {
+        // Determinar el status visible hacia afuera
+        String statusLabel;
+        if (transaction.getStatus() == TransactionStatus.APPROVED
+                || transaction.getStatus() == TransactionStatus.REJECTED
+                || transaction.getStatus() == TransactionStatus.FAILED) {
+            statusLabel = "COMPLETED";
+        } else {
+            statusLabel = transaction.getStatus().name();
+        }
+
+        // Determinar el result visible
+        String result = null;
+        if (transaction.getStatus() == TransactionStatus.APPROVED) {
+            result = "APPROVED";
+        } else if (transaction.getStatus() == TransactionStatus.REJECTED) {
+            result = "REJECTED";
+        }
+
         return TransactionResponse.builder()
                 .id(transaction.getId())
                 .merchantId(transaction.getMerchantId())
                 .amount(transaction.getAmount())
-                .status((transaction.getStatus() == com.codefactory.appstripe.transactions.domain.TransactionStatus.APPROVED || transaction.getStatus() == com.codefactory.appstripe.transactions.domain.TransactionStatus.REJECTED || transaction.getStatus() == com.codefactory.appstripe.transactions.domain.TransactionStatus.FAILED) ? "COMPLETED" : transaction.getStatus().name())
-                .result(transaction.getStatus() == com.codefactory.appstripe.transactions.domain.TransactionStatus.APPROVED ? "APPROVED" :
-                    transaction.getStatus() == com.codefactory.appstripe.transactions.domain.TransactionStatus.REJECTED ? "REJECTED" : null)
+                .status(statusLabel)
+                .result(result)
+                .refundedAmount(transaction.getRefundedAmount())
+                .availableForRefund(transaction.getAvailableForRefund())
                 .build();
     }
 }

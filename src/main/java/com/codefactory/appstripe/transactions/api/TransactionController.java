@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.codefactory.appstripe.transactions.api.dto.CreateTransactionRequest;
+import com.codefactory.appstripe.transactions.api.dto.RefundRequest;
 import com.codefactory.appstripe.transactions.api.dto.TransactionResponse;
 import com.codefactory.appstripe.transactions.application.TransactionApplicationService;
 import com.codefactory.appstripe.transactions.domain.Transaction;
@@ -85,5 +86,23 @@ public class TransactionController {
         }
 
         return merchantId;
+    }
+
+    @PostMapping("/{transactionId}/refund-full")
+    public ResponseEntity<TransactionResponse> refundFull(
+            @PathVariable String transactionId,
+            @RequestBody RefundRequest request) {
+        Transaction updated = transactionApplicationService
+                .refundFull(transactionId, request.getReason());
+        return ResponseEntity.ok(TransactionResponse.fromDomain(updated));
+    }
+
+    @PostMapping("/{transactionId}/refund-partial")
+    public ResponseEntity<TransactionResponse> refundPartial(
+            @PathVariable String transactionId,
+            @Valid @RequestBody RefundRequest request) {
+        Transaction updated = transactionApplicationService
+                .refundPartial(transactionId, request.getAmount(), request.getReason());
+        return ResponseEntity.ok(TransactionResponse.fromDomain(updated));
     }
 }

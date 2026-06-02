@@ -172,4 +172,46 @@ public class TransactionApplicationService {
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
     }
+
+    public Transaction refundFull(String transactionId, String reason) {
+        Transaction transaction = transactionRepositoryPort.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Transacción no encontrada con ID: " + transactionId));
+
+        TransactionStatus oldStatus = transaction.getStatus();
+
+        // La regla de negocio vive en el dominio
+        transaction.refundFull();
+
+        Transaction saved = transactionRepositoryPort.save(transaction);
+
+        auditPublisherPort.publishStatusChange(
+                saved.getId(), oldStatus, saved.getStatus());
+
+        merchantNotifierPort.notifyRefund(saved, saved.getAmount(), reason);
+
+        return saved;
+    }
+
+    public Transaction refundPartial(String transactionId,
+                                      java.math.BigDecimal refundAmount,
+                                      String reason) {
+        Transaction transaction = transactionRepositoryPort.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Transacción no encontrada con ID: " + transactionId));
+
+        TransactionStatus oldStatus = transaction.getStatus();
+
+        // La regla de negocio vive en el dominio
+        transaction.refundPartial(refundAmount);
+
+        Transaction saved = transactionRepositoryPort.save(transaction);
+
+        auditPublisherPort.publishStatusChange(
+                saved.getId(), oldStatus, saved.getStatus());
+
+        merchantNotifierPort.notifyRefund(saved, refundAmount, reason);
+
+        return saved;
+    }
 }

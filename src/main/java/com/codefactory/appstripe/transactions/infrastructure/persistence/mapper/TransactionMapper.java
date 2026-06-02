@@ -27,7 +27,7 @@ public interface TransactionMapper {
                 entity.getMerchantId(),
                 entity.getAmount(),
                 entity.getStatus(),
-                entity.getCreatedAt()
+                entity.getRefundedAmount() // Asegúrate de pasar el monto reembolsado
         );
     }
 }

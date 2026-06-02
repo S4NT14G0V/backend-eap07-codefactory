@@ -1,5 +1,7 @@
 package com.codefactory.appstripe.transactions.application.port;
 
+import java.math.BigDecimal;
+
 import com.codefactory.appstripe.transactions.domain.Transaction;
 
 
@@ -11,4 +13,7 @@ public interface IMerchantNotifierPort {
     
     // Notifica el resultado final del procesamiento al comercio
     void notifyProcessingCompletion(Transaction transaction, String result, String authorizationCode, String rejectionReason);
+
+    // Nuevo para HU016/HU017
+    void notifyRefund(Transaction transaction, BigDecimal refundedAmount, String reason);
 }

@@ -6,5 +6,7 @@ public enum TransactionStatus {
     PROCESSING, // Se cambia a este estado
     APPROVED, // Estado final
     REJECTED,// Estado final
-    FAILED // Estado final
+    FAILED, // Estado final
+    PARTIALLY_REFUNDED, // nuevo
+    REFUNDED            // nuevo (reembolso total)
 }
