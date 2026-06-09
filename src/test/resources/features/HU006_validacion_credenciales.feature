@@ -1,38 +1,41 @@
 # =============================================================================
-# HU006: Validación de credenciales por solicitud
-# Prioridad: 1 | Módulo: Security / CredentialValidationFilter
+# HU006 - Validación de credenciales por solicitud de pago
+# Épica: EP02 | Feature: FE201 | Sprint: Sprint 2 | Prioridad: Crítica
+# Story Points: 5 SP
 # =============================================================================
-# Como un comercio integrado a la plataforma,
-# Quiero que cada solicitud a la API transaccional valide mis credenciales (publicKey + secret),
-# Para que solo pagos autorizados puedan ser procesados.
+# Como administrador de la plataforma de pagos,
+# Quiero que el sistema verifique en cada solicitud de pago que las credenciales del
+# comercio sean válidas,
+# Para garantizar que únicamente los comercios autorizados puedan realizar transacciones.
+# =============================================================================
 
-Feature: Validación de credenciales por solicitud
-  Como comercio verificado
-  Quiero que cada petición a la API valide mis credenciales API
-  Para garantizar que solo transacciones autorizadas sean procesadas
+Feature: Autenticación y generación de credenciales
+  Como administrador de la plataforma de pagos
+  Quiero que el sistema verifique en cada solicitud de pago que las credenciales del comercio sean válidas
+  Para garantizar que únicamente los comercios autorizados puedan realizar transacciones
 
   Background:
     Given el sistema de pagos está listo para recibir peticiones
-    And existen credenciales activas con permiso "payments:write"
 
-  @HU006 @CP-S2-001 @camino-feliz
-  Scenario: Transacción exitosa con credenciales válidas
-    Given un comercio verificado con credenciales activas
-    When se envía una solicitud POST a "/api/v1/transactions" con las credenciales válidas
-    And el cuerpo de la transacción contiene:
-      """
-      {
-        "merchantId": "{merchantId}",
-        "amount": 25000
-      }
-      """
-    Then la respuesta debe tener código 201
-    And el campo "status" debe ser "CREATED"
-    And el campo "id" debe coincidir con el patrón "txn_*"
+  @HU006 @camino-feliz
+  Scenario: Solicitud de pago con credenciales válidas
+    Given que las credenciales del comercio están vigentes
+    And las credenciales tienen permisos para realizar transacciones
+    When el sistema recibe una transacción del comercio
+    Then el pago generado por el comercio es autorizado
+    And el saldo del comercio es modificado según el valor del pago
 
-  @HU006 @CP-S2-003 @seguridad
-  Scenario: Rechazo por credenciales de otro comercio
-    Given un comercio verificado con credenciales activas
-    When se envía una solicitud POST a "/api/v1/transactions" con X-Merchant-Id de otro comercio
-    Then la respuesta debe tener código 401
-    And el campo "errorCode" debe ser "CREDENTIAL_MISMATCH"
+  @HU006 @error
+  Scenario: Solicitud de pago no exitosa debido a permisos insuficientes
+    Given que las credenciales del comercio no tienen permiso para realizar transacciones
+    When el sistema intenta usar las credenciales para iniciar una transacción
+    Then el sistema rechaza la solicitud de pago
+    And muestra un mensaje al comercio que sus credenciales no tienen el permiso requerido para esa operación
+    And el saldo del comercio no es modificado
+
+  @HU006 @error
+  Scenario: Solicitud de pago con credenciales de otro comercio
+    Given que las credenciales ingresadas corresponden a otro comercio
+    When el comercio intenta usarlas para realizar operaciones
+    Then el sistema rechaza la solicitud
+    And muestra un mensaje de que las credenciales no son válidas
