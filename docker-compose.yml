@@ -14,6 +14,32 @@ services:
       org.springframework.boot.jdbc.parameters: "allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
     volumes:
       - mysql_data:/var/lib/mysql
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: appstripe-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    depends_on:
+      - mysql-db
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: appstripe-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
 
 volumes:
   mysql_data:
+  grafana_data:

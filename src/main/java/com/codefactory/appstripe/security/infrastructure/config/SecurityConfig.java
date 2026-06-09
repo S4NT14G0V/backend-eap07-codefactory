@@ -55,6 +55,13 @@ public class SecurityConfig {
                                 writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "UNAUTHORIZED", authException.getMessage()))
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/health/**",
+                                "/actuator/info",
+                                "/actuator/prometheus"
+                        ).permitAll()
+
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/transactions/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
