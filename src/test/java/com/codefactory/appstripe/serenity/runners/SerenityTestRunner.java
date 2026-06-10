@@ -7,7 +7,6 @@ import org.junit.platform.suite.api.Suite;
 
 import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
 import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
-import static io.cucumber.junit.platform.engine.Constants.FILTER_TAGS_PROPERTY_NAME;
 
 /**
  * Runner principal para pruebas E2E con Serenity BDD + Cucumber (JUnit 5).
@@ -27,7 +26,6 @@ import static io.cucumber.junit.platform.engine.Constants.FILTER_TAGS_PROPERTY_N
 @SelectClasspathResource("features")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.codefactory.appstripe.serenity.steps")
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "net.serenitybdd.cucumber.core.plugin.SerenityReporter, pretty, json:target/serenity-reports/cucumber.json")
-@ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @ignored")
 public class SerenityTestRunner {
     // Clase de configuración pura — el runner ejecuta los features via JUnit 5 @Suite.
     // Spring Boot se inicia desde CommonSteps con @BeforeAll de Cucumber.
