@@ -13,6 +13,7 @@ import lombok.Value;
 @Builder
 public class TransactionResponse {
     String id;
+    String refundId;
     String merchantId;
     BigDecimal amount;
     String status;
@@ -23,9 +24,7 @@ public class TransactionResponse {
     public static TransactionResponse fromDomain(Transaction transaction) {
         // Determinar el status visible hacia afuera
         String statusLabel;
-        if (transaction.getStatus() == TransactionStatus.APPROVED
-                || transaction.getStatus() == TransactionStatus.REJECTED
-                || transaction.getStatus() == TransactionStatus.FAILED) {
+        if (transaction.getStatus() == TransactionStatus.APPROVED) {
             statusLabel = "COMPLETED";
         } else {
             statusLabel = transaction.getStatus().name();
@@ -39,8 +38,16 @@ public class TransactionResponse {
             result = "REJECTED";
         }
 
+        // Generar refundId si la transacción está reembolsada
+        String refundId = null;
+        if (transaction.getStatus() == TransactionStatus.REFUNDED
+                || transaction.getStatus() == TransactionStatus.PARTIALLY_REFUNDED) {
+            refundId = transaction.getId() + "-REF";
+        }
+
         return TransactionResponse.builder()
                 .id(transaction.getId())
+                .refundId(refundId)
                 .merchantId(transaction.getMerchantId())
                 .amount(transaction.getAmount())
                 .status(statusLabel)

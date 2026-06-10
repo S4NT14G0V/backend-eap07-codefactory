@@ -1,6 +1,7 @@
 package com.codefactory.appstripe.common.api;
 
 import com.codefactory.appstripe.identity.domain.exception.CredentialAccessDeniedException;
+import com.codefactory.appstripe.transactions.domain.exception.InvalidTransactionStateException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -35,6 +36,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNotFound(java.util.NoSuchElementException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(buildError("RESOURCE_NOT_FOUND", ex.getMessage(), List.of(ex.getMessage())));
+    }
+
+    @ExceptionHandler(InvalidTransactionStateException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTransactionState(InvalidTransactionStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(buildError("INVALID_TRANSACTION_STATE", ex.getMessage(), List.of(ex.getMessage())));
     }
 
     @ExceptionHandler(RuntimeException.class)

@@ -88,6 +88,8 @@ public class TransactionApplicationService {
             transaction.approve(authorizationCode);
         } else if ("REJECTED".equalsIgnoreCase(result)) {
             transaction.reject();
+        } else if ("FAILED".equalsIgnoreCase(result)) {
+            transaction.fail();
         } else {
             throw new RuntimeException("Resultado desconocido: " + result);
         }
@@ -101,6 +103,21 @@ public class TransactionApplicationService {
         return saved;
     }
 
+    public Transaction failTransaction(String transactionId, String errorDetail) {
+        Transaction transaction = transactionRepositoryPort.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transacción no encontrada con ID: " + transactionId));
+
+        TransactionStatus oldStatus = transaction.getStatus();
+        transaction.fail();
+
+        Transaction saved = transactionRepositoryPort.save(transaction);
+
+        auditPublisherPort.publishStatusChange(saved.getId(), oldStatus, saved.getStatus());
+
+        merchantNotifierPort.notifyProcessingCompletion(saved, "FAILED", null, errorDetail);
+
+        return saved;
+    }
 
     public PaymentStatusDistribution getPaymentStatusDistribution(String merchantId, LocalDate from, LocalDate to) {
         if (merchantId == null || merchantId.isBlank()) {

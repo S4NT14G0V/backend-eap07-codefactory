@@ -88,6 +88,22 @@ public class TransactionController {
         return merchantId;
     }
 
+    @PatchMapping("/{transactionId}/fail")
+    public ResponseEntity<TransactionResponse> fail(@PathVariable String transactionId,
+            @RequestBody(required = false) String rawBody) {
+        String errorDetail = "Error de comunicación con el procesador";
+        if (rawBody != null && !rawBody.isBlank()) {
+            try {
+                com.fasterxml.jackson.databind.JsonNode node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(rawBody);
+                if (node.has("processorResponse") && node.get("processorResponse").has("message")) {
+                    errorDetail = node.get("processorResponse").get("message").asText();
+                }
+            } catch (Exception ignored) {}
+        }
+        Transaction updated = transactionApplicationService.failTransaction(transactionId, errorDetail);
+        return ResponseEntity.ok(TransactionResponse.fromDomain(updated));
+    }
+
     @PostMapping("/{transactionId}/refund-full")
     public ResponseEntity<TransactionResponse> refundFull(
             @PathVariable String transactionId,

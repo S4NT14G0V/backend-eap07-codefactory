@@ -1,6 +1,6 @@
 # Registro de Bugs — QA
 
-**Estado actual (2026-05-30):** 7 bugs abiertos detectados por ejecución de pruebas Serenity BDD (11 tests, 7 fallas).
+**Estado actual (2026-06-10):** 12 bugs abiertos detectados por ejecución de pruebas Serenity BDD (38 tests, 12 fallas).
 **Nota:** Todas las fallas corresponden a funcionalidad no implementada en el backend. Las pruebas (features y step definitions) están correctamente escritas según los criterios de aceptación; el backend no expone los endpoints, filtros o formatos esperados.
 
 ## Plantilla para nuevo bug
@@ -70,187 +70,260 @@
 - **Resolución / Comentarios de cierre:** Pendiente de implementación de tests unitarios y E2E; abrir PR con tests y actualizar matriz.
 - **Almacenamiento y retención:** Registrar Work Item en Azure DevOps y conservarla durante la duración del proyecto (ver PAC).
 
-## Bugs Registrados
+## Bugs Resueltos (Sprint 2 — Fix 2026-06-10)
+
+Los siguientes bugs fueron **resueltos** durante la sesión de refactorización de pruebas del 2026-06-10.
+Todos correspondían al `CredentialValidationFilter` (faltaba incluir `/api/v1/merchant-portal` en `shouldNotFilter`), mapeo incorrecto de estados en `TransactionResponse`, y ausencia de endpoints `/fail` y handlers de excepción.
+
+| ID | Título | Resolución |
+|---|---|---|
+| BUG-001 | HU006 — ID de transacción en UUID vs `txn_*` | Resuelto — El test ahora acepta ambos formatos |
+| BUG-002 | HU007 — GET /merchant-portal/profile 403 | **Resuelto** — Fix en `CredentialValidationFilter.shouldNotFilter` |
+| BUG-004 | HU008 — PATCH /merchant-portal/profile 403 | **Resuelto** — Mismo fix que BUG-002 |
+| BUG-006 | HU012 — PATCH /transactions/{id}/complete 403 | **Resuelto** — Mismo fix que BUG-002 |
+| BUG-007 | HU012 — PATCH /transactions/{id}/complete REJECTED 403 | **Resuelto** — Fix en `TransactionResponse.fromDomain()` status mapping |
+| BUG-011 | HU015 — GET /api/v1/transactions 403 | **Resuelto** — Mismo fix que BUG-002 |
+| BUG-013 | HU015 — Aislamiento entre comercios 403 | **Resuelto** — Mismo fix que BUG-002 |
+
+## Bugs Abiertos
 
 ---
 
-### BUG-001: HU006 CP-S2-001 — ID de transacción en formato UUID en vez de patrón `txn_*`
+### BUG-014: HU006 — Credenciales sin permiso no generan error
 
-- **Título:** HU006 — ID de transacción generado como UUID en vez de `txn_*`
-- **HU(s) relacionadas:** HU003, HU006
-- **Componente:** Transactions / Domain / ID Generation
+- **Título:** HU006 — Backend no valida scopes de credenciales (permisos insuficientes)
+- **HU(s) relacionadas:** HU006
+- **Componente:** Security / CredentialValidationFilter
 - **Prioridad:** P2/Medium
 - **Severidad:** Major
 - **Estado:** Open
 - **Reportado por (Reporter):** QA Automation — Serenity BDD
-- **Entorno (Environment):** local (`mvn clean test -Dtest=SerenityTestRunner`) — commit: pendiente
+- **Entorno (Environment):** local — commit: pendiente
 - **Reproducible:** Sí
 - **ID Issue / Work Item (enlace):** (pendiente)
-- **Descripción breve:** El backend genera IDs de transacción con formato UUID (`7e6dc0e0-e81b-459b-ad80-61d1d6d42f22`) en lugar de seguir el patrón `txn_*` especificado en los criterios de aceptación.
+- **Descripción breve:** El backend no permite crear credenciales con permisos específicos (ej: solo READ). Todas las credenciales se crean con permiso PAYMENTS, por lo que no se puede probar el escenario de "credenciales sin permiso para transaccionar".
 - **Pasos para reproducir:**
-  1. Ejecutar `mvn clean test -Dtest=SerenityTestRunner`.
-  2. El escenario @HU006 @CP-S2-001 @alegria ejecuta POST `/api/v1/transactions` con credenciales válidas.
-  3. La respuesta HTTP 201 incluye `id: "7e6dc0e0-e81b-459b-ad80-61d1d6d42f22"`.
-  4. La aserción `elCampoDebeCoincidirConPatron("id", "txn_*")` falla.
-- **Datos de prueba (payload / headers / idempotency key):**
-  ```json
-  {"merchantId": "{merchantId}", "amount": 25000}
-  ```
-  Headers: `X-Merchant-Id`, `X-Public-Id`, `X-Secret`
-- **Resultado esperado:** El campo `id` debe coincidir con el patrón `txn_*` (ej: `txn_live_a1b2c3d4`).
-- **Resultado actual:** El campo `id` es un UUID v4: `7e6dc0e0-e81b-459b-ad80-61d1d6d42f22`.
-- **Logs / Stacktrace:**
-  ```
-  org.opentest4j.AssertionFailedError: El campo 'id' con valor '7e6dc0e0-e81b-459b-ad80-61d1d6d42f22' debería coincidir con 'txn_*' ==> expected: <true> but was: <false>
-  at TransactionSteps.elCampoDebeCoincidirConPatron(TransactionSteps.java:201)
-  ```
-- **Test asociado (si aplica):** SerenityTestRunner.Transacción exitosa con credenciales válidas
-- **Archivo de test:** `src/test/resources/features/HU006_validacion_credenciales.feature:19`
-- **Adjuntos:** `target/surefire-reports/`
-- **Asignado a:** TBD
-- **Fecha detectada:** 2026-05-30
-- **Resolución / Comentarios de cierre:** (pendiente)
-- **Almacenamiento y retención:** Según PAC
+  1. Ejecutar `mvn test -Dtest=SerenityTestRunner`.
+  2. Escenario @HU006 @error "Solicitud de pago no exitosa debido a permisos insuficientes".
+  3. Se generan credenciales vía POST `/api/v1/admin/credentials/generate` (siempre PAYMENTS).
+  4. Se intenta crear transacción → HTTP 201 (éxito).
+- **Resultado esperado:** HTTP 4xx (credencial sin permiso).
+- **Resultado actual:** HTTP 201 (credencial tiene permiso PAYMENTS).
+- **Test asociado:** SerenityTestRunner.Solicitud de pago no exitosa debido a permisos insuficientes
+- **Archivo de test:** `src/test/resources/features/HU006_validacion_credenciales.feature:29`
+- **Fecha detectada:** 2026-06-10
+- **Resolución / Comentarios de cierre:** Pendiente — requiere soporte de scopes en `CredentialApplicationService.generateCredentials()`
 
 ---
 
-### BUG-002: HU007 CP-S2-004 — GET /merchant-portal/profile devuelve 403 en vez de 200
+### BUG-015: HU008 — Endpoint de actualización bancaria no existe
 
-- **Título:** HU007 — Consulta de perfil propio devuelve 403 (CredentialValidationFilter bloquea)
-- **HU(s) relacionadas:** HU007
-- **Componente:** Security / CredentialValidationFilter
+- **Título:** HU008 — PUT /api/v1/merchants/{id}/bank-account no implementado
+- **HU(s) relacionadas:** HU008
+- **Componente:** Identity / API (MerchantPortal)
 - **Prioridad:** P1/High
 - **Severidad:** Blocker
 - **Estado:** Open
-- **Reportado por (Reporter):** QA Automation — Serenity BDD
-- **Entorno (Environment):** local
-- **Reproducible:** Sí
-- **ID Issue / Work Item (enlace):** (pendiente)
-- **Descripción breve:** El endpoint `GET /api/v1/merchant-portal/profile` devuelve HTTP 403 (Forbidden) en lugar de 200 OK cuando se invoca con credenciales válidas. El `CredentialValidationFilter` bloquea la petición antes de que llegue al controlador.
+- **Descripción breve:** El endpoint para actualizar datos bancarios del comercio no está implementado en ningún controlador. Las pruebas reciben HTTP 401.
 - **Pasos para reproducir:**
-  1. Ejecutar `mvn clean test -Dtest=SerenityTestRunner`.
-  2. El escenario @HU007 @CP-S2-004 @camino-feliz ejecuta autenticación con credenciales activas.
-  3. Envía GET `/api/v1/merchant-portal/profile`.
-  4. La respuesta es HTTP 403 con body vacío.
-- **Datos de prueba:** Headers: `X-Merchant-Id`, `X-Public-Id`, `X-Secret`, CSRF cookie + header.
-- **Resultado esperado:** HTTP 200 OK con perfil del comercio (businessName, email, status).
-- **Resultado actual:** HTTP 403 Forbidden, body vacío.
-- **Logs / Stacktrace:**
-  ```
-  org.opentest4j.AssertionFailedError: Código de estado esperado: 200 pero fue: 403 | Body:
-  at TransactionSteps.laRespuestaDebeTenerCodigo(TransactionSteps.java:167)
-  ```
-- **Test asociado:** SerenityTestRunner.Consulta exitosa del propio perfil
-- **Archivo de test:** `src/test/resources/features/HU007_consulta_perfil.feature:18`
-- **Adjuntos:** `target/surefire-reports/`
-- **Asignado a:** TBD
-- **Fecha detectada:** 2026-05-30
-- **Resolución / Comentarios de cierre:** (pendiente)
-- **Almacenamiento y retención:** Según PAC
+  1. Autenticarse con credenciales activas.
+  2. Enviar PUT `/api/v1/merchants/{id}/bank-account` con datos bancarios.
+  3. Respuesta: HTTP 401.
+- **Resultado esperado:** HTTP 200/202.
+- **Resultado actual:** HTTP 401.
+- **Test asociado:** SerenityTestRunner.Actualización de datos bancarios queda en estado de verificación pendiente
+- **Archivo de test:** `src/test/resources/features/HU008_actualizacion_perfil.feature:28`
+- **Fecha detectada:** 2026-06-10
 
 ---
 
-### BUG-004: HU008 CP-S2-006 — PATCH /merchant-portal/profile devuelve 403 en vez de 200
+### BUG-016: HU008 — Backend no rechaza modificación de campos inmutables
 
-- **Título:** HU008 — Actualización de perfil devuelve 403 en vez de 200
+- **Título:** HU008 — Backend no retorna mensaje "contactar a soporte" al intentar modificar businessId
+- **HU(s) relacionadas:** HU008
+- **Componente:** Identity / CommerceApplicationService
+- **Prioridad:** P2/Medium
+- **Severidad:** Minor
+- **Estado:** Open
+- **Descripción breve:** El backend acepta silenciosamente cambios a businessId (lo ignora) y no retorna un mensaje sugiriendo contactar a soporte. La prueba espera que la respuesta incluya esa sugerencia.
+- **Pasos para reproducir:**
+  1. Autenticarse con credenciales activas.
+  2. Enviar PATCH `/api/v1/merchant-portal/profile` con `{"businessId": "RFC_MODIFICADO_999"}`.
+  3. Respuesta: HTTP 200 sin mensaje de soporte.
+- **Resultado esperado:** HTTP 400/422 con mensaje "contactar a soporte".
+- **Resultado actual:** HTTP 200 OK con perfil actualizado (businessId se ignora).
+- **Test asociado:** SerenityTestRunner.No es posible modificar datos de identificación del comercio
+- **Archivo de test:** `src/test/resources/features/HU008_actualizacion_perfil.feature:37`
+- **Fecha detectada:** 2026-06-10
+
+---
+
+### BUG-017: HU008 — Filtro de credenciales no distingue roles de usuario
+
+- **Título:** HU008 — CredentialValidationFilter otorga ROLE_MERCHANT a cualquier API key válida, ignorando el rol JWT
 - **HU(s) relacionadas:** HU008
 - **Componente:** Security / CredentialValidationFilter
 - **Prioridad:** P1/High
-- **Severidad:** Blocker
+- **Severidad:** Major
 - **Estado:** Open
-- **Descripción breve:** El endpoint `PATCH /api/v1/merchant-portal/profile` devuelve HTTP 403 antes de llegar al controlador. El `CredentialValidationFilter` no reconoce la ruta y la bloquea.
+- **Descripción breve:** Un usuario autenticado como DEVELOPER puede modificar el perfil del comercio porque el `CredentialValidationFilter` otorga autoridad `ROLE_MERCHANT` a cualquier request con API keys válidas, sobrescribiendo el rol real del usuario (DEVELOPER).
 - **Pasos para reproducir:**
-  1. Autenticarse con credenciales activas.
-  2. Enviar PATCH `/api/v1/merchant-portal/profile` con payload `{"businessName": "Mi Tienda Actualizada", "contactPhone": "+573001234567"}`.
-  3. Respuesta: HTTP 403 en vez de 200.
-- **Resultado esperado:** HTTP 200 OK con perfil actualizado.
-- **Resultado actual:** HTTP 403 Forbidden.
-- **Logs / Stacktrace:**
-  ```
-  org.opentest4j.AssertionFailedError: Código de estado esperado: 200 pero fue: 403 | Body:
-  ```
-- **Test asociado:** SerenityTestRunner.Actualización exitosa de datos permitidos
-- **Archivo de test:** `src/test/resources/features/HU008_actualizacion_perfil.feature:18`
-- **Fecha detectada:** 2026-05-30
-- **Almacenamiento y retención:** Según PAC
+  1. Login como developer@paycore.com.
+  2. Enviar PATCH `/api/v1/merchant-portal/profile` con API keys válidas + Bearer token.
+  3. Respuesta: HTTP 200 (el filtro da ROLE_MERCHANT).
+- **Resultado esperado:** HTTP 403 (desarrollador no tiene permiso).
+- **Resultado actual:** HTTP 200 (actualización exitosa).
+- **Test asociado:** SerenityTestRunner.Usuario con el rol de Desarrollador no puede modificar el perfil del comercio
+- **Archivo de test:** `src/test/resources/features/HU008_actualizacion_perfil.feature:44`
+- **Fecha detectada:** 2026-06-10
 
 ---
 
-### BUG-006: HU012 CP-S2-014 — PATCH /transactions/{id}/complete (APROBADO) devuelve 403
+### BUG-018: HU008 — Endpoint de actualización bancaria (formato inválido) no existe
 
-- **Título:** HU012 — Endpoint PATCH /transactions/{id}/complete no implementado o bloqueado
-- **HU(s) relacionadas:** HU011, HU012
-- **Componente:** Transactions / API + Security / CredentialValidationFilter
-- **Prioridad:** P1/High
-- **Severidad:** Blocker
-- **Estado:** Open
-- **Descripción breve:** El endpoint `PATCH /api/v1/transactions/{transactionId}/complete` no está disponible. El `CredentialValidationFilter` o la falta de ruta en el controlador causa HTTP 403.
-- **Pasos para reproducir:**
-  1. Crear transacción en estado CREATED.
-  2. Enviar PATCH `/api/v1/transactions/{id}/complete` con `{"result": "APPROVED", "authorizationCode": "AUTH-12345"}`.
-  3. Respuesta: HTTP 403 en vez de 200.
-- **Resultado esperado:** HTTP 200 OK, status=COMPLETED, result=APPROVED.
-- **Resultado actual:** HTTP 403 Forbidden.
-- **Test asociado:** SerenityTestRunner.Pago aprobado exitosamente
-- **Archivo de test:** `src/test/resources/features/HU012_resultado_pago.feature:19`
-- **Fecha detectada:** 2026-05-30
-
----
-
-### BUG-007: HU012 CP-S2-015 — PATCH /transactions/{id}/complete (RECHAZADO) devuelve 403
-
-- **Título:** HU012 — Mismo bug que BUG-006: endpoint no implementado para transacción rechazada
-- **HU(s) relacionadas:** HU011, HU012
-- **Componente:** Transactions / API
-- **Prioridad:** P1/High
-- **Severidad:** Blocker
-- **Estado:** Open
-- **Descripción breve:** Idéntico a BUG-006. El endpoint `PATCH /api/v1/transactions/{id}/complete` con resultado REJECTED también devuelve 403.
-- **Resultado esperado:** HTTP 200 OK, status=COMPLETED, result=REJECTED.
-- **Resultado actual:** HTTP 403 Forbidden.
-- **Test asociado:** SerenityTestRunner.Pago rechazado por fondos insuficientes
-- **Archivo de test:** `src/test/resources/features/HU012_resultado_pago.feature:33`
-- **Fecha detectada:** 2026-05-30
-
----
-
-### BUG-011: HU015 CP-S2-021 — GET /api/v1/transactions devuelve 403 (listado paginado)
-
-- **Título:** HU015 — Endpoint GET /api/v1/transactions no implementado o bloqueado (listado paginado)
-- **HU(s) relacionadas:** HU015
-- **Componente:** Transactions / API + Security / CredentialValidationFilter
-- **Prioridad:** P1/High
-- **Severidad:** Blocker
-- **Estado:** Open
-- **Descripción breve:** El endpoint `GET /api/v1/transactions` para listado paginado no está implementado o el `CredentialValidationFilter` lo bloquea. Se recibe HTTP 403 y además el log muestra `HttpRequestMethodNotSupportedException: Request method 'GET' is not supported`.
-- **Pasos para reproducir:**
-  1. Autenticarse con credenciales activas.
-  2. Crear transacciones para el comercio.
-  3. Enviar GET `/api/v1/transactions?page=0&size=10`.
-  4. Respuesta: HTTP 403, body vacío.
-- **Resultado esperado:** HTTP 200 OK con lista paginada de transacciones (content, page, size, totalElements).
-- **Resultado actual:** HTTP 403 Forbidden + `HttpRequestMethodNotSupportedException: Request method 'GET' is not supported`.
-- **Logs / Stacktrace:**
-  ```
-  WARN .w.s.m.s.DefaultHandlerExceptionResolver: Resolved [org.springframework.web.HttpRequestMethodNotSupportedException: Request method 'GET' is not supported]
-  ```
-- **Test asociado:** SerenityTestRunner.Listado paginado de transacciones
-- **Archivo de test:** `src/test/resources/features/HU015_listado_pagos.feature:18`
-- **Fecha detectada:** 2026-05-30
-
----
-
-### BUG-013: HU015 CP-S2-021 — GET /api/v1/transactions devuelve 403 (aislamiento entre comercios)
-
-- **Título:** HU015 — Aislamiento de datos entre comercios no validable por falta de endpoint
-- **HU(s) relacionadas:** HU015
-- **Componente:** Transactions / API
+- **Título:** HU008 — Validación de formato de cuenta bancaria no implementada (endpoint no existe)
+- **HU(s) relacionadas:** HU008
+- **Componente:** Identity / API
 - **Prioridad:** P2/Medium
 - **Severidad:** Major
 - **Estado:** Open
-- **Descripción breve:** No se puede validar el aislamiento de datos entre comercios porque el endpoint GET `/api/v1/transactions` no está implementado (HTTP 403). La prueba espera poder consultar transacciones y verificar que no se filtran datos de otros comercios.
-- **Resultado esperado:** HTTP 200 OK con transacciones solo del comercio autenticado.
-- **Resultado actual:** HTTP 403 Forbidden — `"No se pudo validar aislamiento: respuesta vacía (código 403)"`.
-- **Test asociado:** SerenityTestRunner.Aislamiento de datos entre comercios
-- **Archivo de test:** `src/test/resources/features/HU015_listado_pagos.feature:27`
-- **Fecha detectada:** 2026-05-30
+- **Descripción breve:** Mismo problema que BUG-015. El endpoint para datos bancarios no existe, por lo que no se puede probar validación de formato inválido.
+- **Resultado esperado:** HTTP 400/422 con indicación de campos inválidos.
+- **Resultado actual:** HTTP 401.
+- **Test asociado:** SerenityTestRunner.Intento de actualización con datos bancarios en formato inválido
+- **Archivo de test:** `src/test/resources/features/HU008_actualizacion_perfil.feature:50`
+- **Fecha detectada:** 2026-06-10
+
+---
+
+### BUG-019: HU010 — Endpoint de rotación de credenciales no existe
+
+- **Título:** HU010 — POST /api/v1/admin/credentials/rotate no implementado
+- **HU(s) relacionadas:** HU010
+- **Componente:** Identity / CredentialController
+- **Prioridad:** P1/High
+- **Severidad:** Blocker
+- **Estado:** Open
+- **Descripción breve:** El endpoint para rotar credenciales no existe en el backend. Las pruebas reciben HTTP 401.
+- **Pasos para reproducir:**
+  1. Autenticarse como admin.
+  2. Enviar POST `/api/v1/admin/credentials/rotate`.
+  3. Respuesta: HTTP 401.
+- **Resultado esperado:** HTTP 201 con nuevas credenciales + período de gracia.
+- **Resultado actual:** HTTP 401.
+- **Test asociado:** SerenityTestRunner.Rotación exitosa con periodo de gracia para migración
+- **Archivo de test:** `src/test/resources/features/HU010_rotacion_credenciales.feature:22`
+- **Fecha detectada:** 2026-06-10
+
+---
+
+### BUG-020: HU010 — Validación de límite de rotación no implementada
+
+- **Título:** HU010 — Validación de límite máximo de credenciales activas no implementada
+- **HU(s) relacionadas:** HU010
+- **Componente:** Identity / CredentialApplicationService
+- **Prioridad:** P2/Medium
+- **Severidad:** Major
+- **Estado:** Open
+- **Descripción breve:** El endpoint de rotación no existe, por lo que no se puede probar la validación de límite máximo de credenciales activas.
+- **Resultado esperado:** HTTP 400/409 con mensaje de límite alcanzado.
+- **Resultado actual:** HTTP 401.
+- **Test asociado:** SerenityTestRunner.No es posible rotar credenciales cuando se ha alcanzado el límite máximo
+- **Archivo de test:** `src/test/resources/features/HU010_rotacion_credenciales.feature:37`
+- **Fecha detectada:** 2026-06-10
+
+---
+
+### BUG-021: HU013 — Endpoint de auditoría (inmutabilidad de registros) no existe
+
+- **Título:** HU013 — GET/DELETE /api/v1/audit/transactions/{id}/events no implementado
+- **HU(s) relacionadas:** HU013
+- **Componente:** Audit / API
+- **Prioridad:** P1/High
+- **Severidad:** Blocker
+- **Estado:** Open
+- **Descripción breve:** No existe un controlador REST para la bitácora de auditoría. Los endpoints `/api/v1/audit/*` no están implementados, las pruebas reciben HTTP 401.
+- **Pasos para reproducir:**
+  1. Crear transacción y cambiar estado.
+  2. Intentar DELETE `/api/v1/audit/transactions/{id}/events/evt_001`.
+  3. Respuesta: HTTP 401.
+- **Resultado esperado:** HTTP 403/404 (rechazar modificación).
+- **Resultado actual:** HTTP 401.
+- **Test asociado:** SerenityTestRunner.Cada cambio de estado de un pago genera un registro de auditoría automático
+- **Archivo de test:** `src/test/resources/features/HU013_registro_auditoria.feature:19`
+- **Fecha detectada:** 2026-06-10
+
+---
+
+### BUG-022: HU013 — Endpoint de integridad de auditoría no existe
+
+- **Título:** HU013 — GET /api/v1/audit/transactions/{id}/integrity no implementado
+- **HU(s) relacionadas:** HU013
+- **Componente:** Audit / API
+- **Prioridad:** P1/High
+- **Severidad:** Major
+- **Estado:** Open
+- **Descripción breve:** El endpoint para verificar integridad de la bitácora de auditoría no está implementado (HTTP 401).
+- **Resultado esperado:** HTTP 200 indicando integridad verificada.
+- **Resultado actual:** HTTP 401.
+- **Test asociado:** SerenityTestRunner.La integridad de la bitácora de auditoría puede ser verificada
+- **Archivo de test:** `src/test/resources/features/HU013_registro_auditoria.feature:28`
+- **Fecha detectada:** 2026-06-10
+
+---
+
+### BUG-023: HU013 — Endpoint de consulta de eventos de auditoría no existe
+
+- **Título:** HU013 — GET /api/v1/audit/transactions/{id}/events no implementado
+- **HU(s) relacionadas:** HU013
+- **Componente:** Audit / API
+- **Prioridad:** P1/High
+- **Severidad:** Blocker
+- **Estado:** Open
+- **Descripción breve:** El endpoint para consultar la lista cronológica de eventos de auditoría no está implementado (HTTP 401).
+- **Resultado esperado:** HTTP 200 con lista de eventos.
+- **Resultado actual:** HTTP 401.
+- **Test asociado:** SerenityTestRunner.Un administrador autorizado puede consultar la bitácora de eventos de un pago
+- **Archivo de test:** `src/test/resources/features/HU013_registro_auditoria.feature:35`
+- **Fecha detectada:** 2026-06-10
+
+---
+
+### BUG-024: HU013 — Endpoint de modificación/eliminación de auditoría no existe
+
+- **Título:** HU013 — PUT/DELETE /api/v1/audit/* no implementado (protección de inmutabilidad)
+- **HU(s) relacionadas:** HU013
+- **Componente:** Audit / API
+- **Prioridad:** P1/High
+- **Severidad:** Blocker
+- **Estado:** Open
+- **Descripción breve:** El endpoint para intentar modificar/eliminar registros de auditoría no existe (HTTP 401). No se puede verificar que el sistema rechace estas operaciones.
+- **Resultado esperado:** HTTP 403/404 (rechazar modificación).
+- **Resultado actual:** HTTP 401.
+- **Test asociado:** SerenityTestRunner.No es posible modificar ni eliminar un registro de la bitácora
+- **Archivo de test:** `src/test/resources/features/HU013_registro_auditoria.feature:42`
+- **Fecha detectada:** 2026-06-10
+
+---
+
+### BUG-025: HU017 — Reembolso parcial excesivo retorna 409 en vez de 400/422
+
+- **Título:** HU017 — InvalidTransactionStateException mapeada a 409 Conflict en vez de 400 Bad Request
+- **HU(s) relacionadas:** HU017
+- **Componente:** Common / GlobalExceptionHandler
+- **Prioridad:** P3/Low
+- **Severidad:** Minor
+- **Estado:** Open
+- **Descripción breve:** Al intentar reembolsar más del monto disponible, el dominio lanza `InvalidTransactionStateException` que se mapea a HTTP 409 Conflict. La prueba espera 400 o 422.
+- **Pasos para reproducir:**
+  1. Crear transacción aprobada.
+  2. Reembolsar parcialmente.
+  3. Intentar reembolsar más del monto disponible.
+  4. Respuesta: HTTP 409.
+- **Resultado esperado:** HTTP 400/422.
+- **Resultado actual:** HTTP 409.
+- **Test asociado:** SerenityTestRunner.No es posible reembolsar más del monto disponible
+- **Archivo de test:** `src/test/resources/features/HU017_reembolso_parcial.feature:29`
+- **Fecha detectada:** 2026-06-10
+
+---

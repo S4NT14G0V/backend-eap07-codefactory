@@ -101,6 +101,16 @@ public class Transaction {
         this.status = TransactionStatus.REJECTED;
     }
 
+    // Marca la transacción como fallida (estado final) por error técnico
+    public void fail() {
+        if (this.status == TransactionStatus.APPROVED || this.status == TransactionStatus.REJECTED || this.status == TransactionStatus.FAILED) {
+            throw new InvalidTransactionStateException(
+                    "Operación bloqueada: No se puede marcar como fallida una transacción que ya está en estado final (" + this.status + ")."
+            );
+        }
+        this.status = TransactionStatus.FAILED;
+    }
+
     /**
      * Reembolsa el pago en su totalidad.
      * Regla 1: Solo se puede reembolsar si el estado es APPROVED o PARTIALLY_REFUNDED.
