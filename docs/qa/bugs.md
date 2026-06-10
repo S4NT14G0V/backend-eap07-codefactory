@@ -70,21 +70,6 @@
 - **Resolución / Comentarios de cierre:** Pendiente de implementación de tests unitarios y E2E; abrir PR con tests y actualizar matriz.
 - **Almacenamiento y retención:** Registrar Work Item en Azure DevOps y conservarla durante la duración del proyecto (ver PAC).
 
-## Bugs Resueltos (Sprint 2 — Fix 2026-06-10)
-
-Los siguientes bugs fueron **resueltos** durante la sesión de refactorización de pruebas del 2026-06-10.
-Todos correspondían al `CredentialValidationFilter` (faltaba incluir `/api/v1/merchant-portal` en `shouldNotFilter`), mapeo incorrecto de estados en `TransactionResponse`, y ausencia de endpoints `/fail` y handlers de excepción.
-
-| ID | Título | Resolución |
-|---|---|---|
-| BUG-001 | HU006 — ID de transacción en UUID vs `txn_*` | Resuelto — El test ahora acepta ambos formatos |
-| BUG-002 | HU007 — GET /merchant-portal/profile 403 | **Resuelto** — Fix en `CredentialValidationFilter.shouldNotFilter` |
-| BUG-004 | HU008 — PATCH /merchant-portal/profile 403 | **Resuelto** — Mismo fix que BUG-002 |
-| BUG-006 | HU012 — PATCH /transactions/{id}/complete 403 | **Resuelto** — Mismo fix que BUG-002 |
-| BUG-007 | HU012 — PATCH /transactions/{id}/complete REJECTED 403 | **Resuelto** — Fix en `TransactionResponse.fromDomain()` status mapping |
-| BUG-011 | HU015 — GET /api/v1/transactions 403 | **Resuelto** — Mismo fix que BUG-002 |
-| BUG-013 | HU015 — Aislamiento entre comercios 403 | **Resuelto** — Mismo fix que BUG-002 |
-
 ## Bugs Abiertos
 
 ---
