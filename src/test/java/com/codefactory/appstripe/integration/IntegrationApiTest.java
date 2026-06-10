@@ -23,9 +23,6 @@ class IntegrationApiTest {
     @LocalServerPort
     int port;
 
-    private String csrfToken;
-    private String csrfHeaderName;
-    private String csrfCookie;
     private String adminToken;
     private String merchantId;
     private String publicId;
@@ -39,27 +36,12 @@ class IntegrationApiTest {
         RestAssured.port = port;
         ts = System.currentTimeMillis();
 
-        // 1) Obtener CSRF token
-        Response csrfResp = given()
-            .when().get("/api/v1/security/csrf")
-            .then().statusCode(200)
-                .extract().response();
-
-        csrfToken = csrfResp.jsonPath().getString("token");
-        csrfHeaderName = csrfResp.jsonPath().getString("headerName");
-        csrfCookie = csrfResp.cookie("XSRF-TOKEN");
-
-        Assertions.assertNotNull(csrfToken, "CSRF token debe ser retornado");
-        Assertions.assertNotNull(csrfCookie, "CSRF cookie debe ser retornada");
-
-        // 2) Login como admin (creado por DataSeeder)
+        // Login como admin (creado por DataSeeder) — CSRF deshabilitado en la API
         Map<String, Object> login = new HashMap<>();
         login.put("email", "admin@paycore.com");
         login.put("password", "admin123");
 
         adminToken = given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .contentType("application/json")
                 .body(login)
             .when().post("/api/v1/auth/login")
@@ -90,8 +72,6 @@ class IntegrationApiTest {
         merchant.put("businessType", "RETAIL");
 
         Response resp = given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .header("Authorization", "Bearer " + adminToken)
                 .contentType("application/json")
                 .body(merchant)
@@ -99,11 +79,17 @@ class IntegrationApiTest {
             .then().statusCode(201)
                 .body("id", startsWith("mch_"))
                 .body("businessName", equalTo("Mi Tienda SAS " + ts))
-                .body("status", equalTo("VERIFIED"))
+                .body("status", equalTo("PENDING_VERIFICATION"))
                 .extract().response();
 
         merchantId = resp.path("id");
         Assertions.assertNotNull(merchantId, "CP-S1-001: merchantId no debe ser nulo");
+
+        // Aprobar el comercio para poder generar credenciales
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+            .when().patch("/api/v1/admin/merchants/{merchantId}/approve", merchantId)
+            .then().statusCode(200);
     }
 
     @Test
@@ -117,8 +103,6 @@ class IntegrationApiTest {
         merchant.put("businessType", "RETAIL");
 
         given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .header("Authorization", "Bearer " + adminToken)
                 .contentType("application/json")
                 .body(merchant)
@@ -133,8 +117,6 @@ class IntegrationApiTest {
     @DisplayName("CP-S1-004: Registro con campos obligatorios vacíos -> HTTP 400 Bad Request")
     void cp_s1_004_registerBlankFields() {
         given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .header("Authorization", "Bearer " + adminToken)
                 .contentType("application/json")
                 .body("""
@@ -162,8 +144,6 @@ class IntegrationApiTest {
         gen.put("merchantId", merchantId);
 
         Response genResp = given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .header("Authorization", "Bearer " + adminToken)
                 .contentType("application/json")
                 .body(gen)
@@ -190,8 +170,6 @@ class IntegrationApiTest {
         tx.put("amount", 10000);
 
                 paymentId = given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .header("X-Merchant-Id", merchantId)
                 .header("X-Public-Id", publicId)
                 .header("X-Secret", secret)
@@ -231,8 +209,6 @@ class IntegrationApiTest {
         tx.put("amount", 0);
 
         given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .header("X-Merchant-Id", merchantId)
                 .header("X-Public-Id", publicId)
                 .header("X-Secret", secret)
@@ -252,8 +228,6 @@ class IntegrationApiTest {
         tx.put("amount", -500);
 
         given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .header("X-Merchant-Id", merchantId)
                 .header("X-Public-Id", publicId)
                 .header("X-Secret", secret)
@@ -273,8 +247,6 @@ class IntegrationApiTest {
         tx.put("amount", 10000);
 
         given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .header("X-Merchant-Id", merchantId)
                 .header("X-Public-Id", "pk_live_fake")
                 .header("X-Secret", "sk_live_fake")
@@ -294,8 +266,6 @@ class IntegrationApiTest {
         tx.put("amount", 10000);
 
         given()
-                .cookie("XSRF-TOKEN", csrfCookie)
-                .header(csrfHeaderName, csrfToken)
                 .contentType("application/json")
                 .body(tx)
             .when().post("/api/v1/transactions")

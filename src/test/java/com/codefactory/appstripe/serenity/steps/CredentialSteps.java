@@ -22,60 +22,40 @@ public class CredentialSteps {
 
     @Given("existen credenciales activas con permiso {string}")
     public void existenCredencialesActivas(String permission) {
-        if (context().getPublicId() != null && context().getSecret() != null) {
-            return;
-        }
-        obtenerCsrfYLoginAdmin();
-        if (context().getMerchantId() == null) {
-            crearComercio();
-        }
-        generarCredenciales();
+        CommonSteps.asegurarCredenciales();
     }
 
     @Given("existen credenciales activas para un comercio verificado")
     public void existenCredencialesActivasParaComercioVerificado() {
-        if (context().getPublicId() != null && context().getSecret() != null) {
-            return;
-        }
-        obtenerCsrfYLoginAdmin();
-        if (context().getMerchantId() == null) {
-            crearComercio();
-        }
-        generarCredenciales();
+        CommonSteps.asegurarCredenciales();
     }
 
     @Given("un comercio verificado con credenciales activas")
     public void unComercioVerificadoConCredencialesActivas() {
-        existenCredencialesActivas("payments:write");
+        CommonSteps.asegurarCredenciales();
     }
 
     @Given("un comercio verificado")
     public void unComercioVerificado() {
-        if (context().getMerchantId() != null) return;
-        obtenerCsrfYLoginAdmin();
-        crearComercio();
+        CommonSteps.asegurarCredenciales();
     }
 
     @Given("un administrador autenticado")
     public void unAdministradorAutenticado() {
-        obtenerCsrfYLoginAdmin();
+        CommonSteps.loginAdmin();
     }
 
     @Given("una credencial activa con publicId {string}")
     public void unaCredencialActiva(String publicIdPattern) {
-        if (context().getPublicId() == null) {
-            existenCredencialesActivas("payments:write");
-        }
+        CommonSteps.asegurarCredenciales();
     }
 
     @Given("una credencial previamente revocada")
     public void unaCredencialPreviamenteRevocada() {
         if (context().getPublicId() == null) {
-            existenCredencialesActivas("payments:write");
+            CommonSteps.asegurarCredenciales();
         }
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("Authorization", "Bearer " + context().getAdminToken())
                 .when()
                 .patch("/api/v1/admin/credentials/{publicId}/revoke",
@@ -95,8 +75,6 @@ public class CredentialSteps {
         body.put("merchantId", context().getMerchantId());
         body.put("amount", 25000);
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", context().getMerchantId())
                 .header("X-Public-Id", context().getPublicId())
                 .header("X-Secret", context().getSecret())
@@ -116,8 +94,6 @@ public class CredentialSteps {
         body.put("merchantId", context().getMerchantId());
         body.put("amount", 10000);
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .contentType("application/json").body(body).when().post(endpoint);
         context().setLastResponse(resp);
     }
@@ -128,8 +104,6 @@ public class CredentialSteps {
         body.put("merchantId", "mch_intruso_123");
         body.put("amount", 10000);
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", "mch_intruso_123")
                 .header("X-Public-Id", context().getPublicId())
                 .header("X-Secret", context().getSecret())
@@ -143,8 +117,6 @@ public class CredentialSteps {
         body.put("merchantId", context().getMerchantId());
         body.put("amount", 10000);
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", context().getMerchantId())
                 .header("X-Public-Id", "pk_live_fake")
                 .header("X-Secret", "sk_live_fake")
@@ -161,8 +133,6 @@ public class CredentialSteps {
     public void patchEndpoint(String endpoint) {
         String resolvedEndpoint = endpoint.replace("{publicId}", context().getPublicId());
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("Authorization", "Bearer " + context().getAdminToken())
                 .when().patch(resolvedEndpoint);
         context().setLastResponse(resp);
@@ -175,8 +145,6 @@ public class CredentialSteps {
         body.put("result", "APPROVED");
         body.put("authorizationCode", "AUTH-12345");
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", context().getMerchantId())
                 .header("X-Public-Id", context().getPublicId())
                 .header("X-Secret", context().getSecret())
@@ -188,46 +156,6 @@ public class CredentialSteps {
     // Métodos auxiliares
     // ========================================================================
 
-    private void obtenerCsrfYLoginAdmin() {
-        Response csrfResp = SerenityRest.given()
-                .when().get("/api/v1/security/csrf")
-                .then().statusCode(200).extract().response();
-        context().setCsrfToken(csrfResp.jsonPath().getString("token"));
-        context().setCsrfHeaderName(csrfResp.jsonPath().getString("headerName"));
-        context().setCsrfCookie(csrfResp.cookie("XSRF-TOKEN"));
-        assertNotNull(context().getCsrfToken(), "CSRF token debe ser retornado");
-
-        Map<String, Object> login = new HashMap<>();
-        login.put("email", "admin@paycore.com");
-        login.put("password", "admin123");
-        Response loginResp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                .contentType("application/json").body(login).when()
-                .post("/api/v1/auth/login")
-                .then().statusCode(200).extract().response();
-        context().setAdminToken(loginResp.jsonPath().getString("token"));
-        assertNotNull(context().getAdminToken(), "Token de admin debe ser retornado");
-    }
-
-    private void crearComercio() {
-        Map<String, Object> merchant = new HashMap<>();
-        String ts = String.valueOf(context().getTimestamp());
-        merchant.put("businessName", "Comercio Serenity " + ts);
-        merchant.put("businessId", "biz_s_" + ts);
-        merchant.put("email", context().getUniqueEmail("serenity"));
-        merchant.put("businessType", "RETAIL");
-        Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                .header("Authorization", "Bearer " + context().getAdminToken())
-                .contentType("application/json").body(merchant).when()
-                .post("/api/v1/admin/merchants")
-                .then().statusCode(201).extract().response();
-        context().setMerchantId(resp.jsonPath().getString("id"));
-        assertNotNull(context().getMerchantId(), "merchantId no debe ser nulo");
-    }
-
     // ========================================================================
     // ===== STEPS EN LENGUAJE DE NEGOCIO =====================================
     // ========================================================================
@@ -237,14 +165,7 @@ public class CredentialSteps {
 
     @Given("que las credenciales del comercio están vigentes")
     public void credencialesVigentes() {
-        if (context().getPublicId() != null && context().getSecret() != null) {
-            return;
-        }
-        obtenerCsrfYLoginAdmin();
-        if (context().getMerchantId() == null) {
-            crearComercio();
-        }
-        generarCredenciales();
+        CommonSteps.asegurarCredenciales();
     }
 
     @Given("las credenciales tienen permisos para realizar transacciones")
@@ -271,8 +192,6 @@ public class CredentialSteps {
         body.put("merchantId", context().getMerchantId());
         body.put("amount", 25000);
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", context().getMerchantId())
                 .header("X-Public-Id", context().getPublicId())
                 .header("X-Secret", context().getSecret())
@@ -291,8 +210,6 @@ public class CredentialSteps {
         body.put("merchantId", "mch_intruso_123");
         body.put("amount", 10000);
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", "mch_intruso_123")
                 .header("X-Public-Id", context().getPublicId())
                 .header("X-Secret", context().getSecret())
@@ -317,6 +234,7 @@ public class CredentialSteps {
     }
 
     @Then("el sistema rechaza la solicitud de pago")
+    @Then("el sistema rechaza la solicitud")
     public void rechazaSolicitudPago() {
         Response resp = context().getLastResponse();
         assertNotNull(resp, "Debe haber una respuesta");
@@ -368,11 +286,9 @@ public class CredentialSteps {
     @Given("que una de mis credenciales ha sido revocada")
     public void unaCredencialHaSidoRevocada() {
         if (context().getPublicId() == null) {
-            credencialesVigentes();
+            CommonSteps.asegurarCredenciales();
         }
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("Authorization", "Bearer " + context().getAdminToken())
                 .when()
                 .patch("/api/v1/admin/credentials/{publicId}/revoke",
@@ -389,8 +305,6 @@ public class CredentialSteps {
     @When("selecciono una credencial y confirmo su revocación")
     public void seleccionoCredencialYConfirmoRevocacion() {
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("Authorization", "Bearer " + context().getAdminToken())
                 .when()
                 .patch("/api/v1/admin/credentials/{publicId}/revoke",
@@ -405,8 +319,6 @@ public class CredentialSteps {
         body.put("merchantId", context().getMerchantId());
         body.put("amount", 15000);
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", context().getMerchantId())
                 .header("X-Public-Id", context().getPublicId())
                 .header("X-Secret", context().getSecret())
@@ -418,8 +330,6 @@ public class CredentialSteps {
     public void intentoReactivarCredencial() {
         // Intentar revocar una credencial ya revocada (debería fallar)
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("Authorization", "Bearer " + context().getAdminToken())
                 .when()
                 .patch("/api/v1/admin/credentials/{publicId}/revoke",
@@ -431,8 +341,6 @@ public class CredentialSteps {
     public void intentoRevocarCredencialDeOtroComercio() {
         // Usar un publicId falso que no pertenezca al comercio actual
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("Authorization", "Bearer " + context().getAdminToken())
                 .when()
                 .patch("/api/v1/admin/credentials/{publicId}/revoke", "pk_live_otro_comercio");
@@ -538,8 +446,6 @@ public class CredentialSteps {
         body.put("rotateFromPublicId", oldPublicId);
 
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("Authorization", "Bearer " + context().getAdminToken())
                 .contentType("application/json").body(body).when()
                 .post("/api/v1/admin/credentials/rotate");
@@ -568,8 +474,6 @@ public class CredentialSteps {
         String oldPublicId = context().getTransactionId();
         if (oldPublicId != null) {
             Response resp = SerenityRest.given()
-                    .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                    .header(context().getCsrfHeaderName(), context().getCsrfToken())
                     .header("Authorization", "Bearer " + context().getAdminToken())
                     .when()
                     .patch("/api/v1/admin/credentials/{publicId}/revoke", oldPublicId);
@@ -577,8 +481,6 @@ public class CredentialSteps {
         } else {
             // Si no hay oldPublicId, intentamos revocar la actual
             Response resp = SerenityRest.given()
-                    .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                    .header(context().getCsrfHeaderName(), context().getCsrfToken())
                     .header("Authorization", "Bearer " + context().getAdminToken())
                     .when()
                     .patch("/api/v1/admin/credentials/{publicId}/revoke",
@@ -665,19 +567,4 @@ public class CredentialSteps {
                 "Debe sugerir revocar una credencial existente. Body: " + resp.body().asString());
     }
 
-    private void generarCredenciales() {
-        Map<String, Object> gen = new HashMap<>();
-        gen.put("merchantId", context().getMerchantId());
-        Response genResp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                .header("Authorization", "Bearer " + context().getAdminToken())
-                .contentType("application/json").body(gen).when()
-                .post("/api/v1/admin/credentials/generate")
-                .then().statusCode(201).extract().response();
-        context().setPublicId(genResp.jsonPath().getString("publicId"));
-        context().setSecret(genResp.jsonPath().getString("secret"));
-        assertNotNull(context().getPublicId(), "publicId no debe ser nulo");
-        assertNotNull(context().getSecret(), "secret no debe ser nulo");
-    }
 }

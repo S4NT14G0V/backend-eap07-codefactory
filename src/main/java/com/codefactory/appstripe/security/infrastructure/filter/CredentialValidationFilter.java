@@ -31,7 +31,8 @@ public class CredentialValidationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(jakarta.servlet.http.HttpServletRequest request) {
         String path = request.getServletPath();
-        return !path.startsWith("/api/v1/transactions");
+        return !path.startsWith("/api/v1/transactions")
+            && !path.startsWith("/api/v1/merchant-portal");
     }
     @Override
     protected void doFilterInternal(

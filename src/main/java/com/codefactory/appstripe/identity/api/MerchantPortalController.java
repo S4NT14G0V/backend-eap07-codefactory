@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import com.codefactory.appstripe.transactions.api.dto.TransactionVolumeReportResponse;
 import com.codefactory.appstripe.transactions.application.query.TransactionVolumeReport;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -73,7 +72,6 @@ public class MerchantPortalController {
     }
 
     @PatchMapping("/profile")
-    @PutMapping("/update-profile")
     public ResponseEntity<MerchantResponse> putProfile(
             Authentication authentication,
             @Valid @RequestBody UpdateMerchantProfileRequest request) {

@@ -28,9 +28,9 @@ Feature: Procesamiento del resultado de pagos por parte del procesador financier
 
   @HU011 @camino-feliz
   Scenario Outline: Pago rechazado por el procesador financiero según el motivo de rechazo
-    Given que el procesador financiero externo rechaza la transacción por <motivo_rechazo>
+    Given que el procesador financiero externo rechaza la transacción por "<motivo_rechazo>"
     When el sistema procesa el rechazo
-    Then el pago queda marcado como rechazado con el motivo correspondiente en términos de negocio: <descripcion_negocio>
+    Then el pago queda marcado como rechazado con el motivo correspondiente en términos de negocio: "<descripcion_negocio>"
     And el comercio recibe la notificación del rechazo con el motivo de negocio correspondiente
 
     Examples:

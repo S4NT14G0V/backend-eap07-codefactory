@@ -42,8 +42,6 @@ public class AuditSteps {
             tx.put("merchantId", context().getMerchantId());
             tx.put("amount", 50000);
             Response resp = SerenityRest.given()
-                    .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                    .header(context().getCsrfHeaderName(), context().getCsrfToken())
                     .header("X-Merchant-Id", context().getMerchantId())
                     .header("X-Public-Id", context().getPublicId())
                     .header("X-Secret", context().getSecret())
@@ -69,8 +67,6 @@ public class AuditSteps {
         String endpoint = "/api/v1/transactions/{id}/complete"
                 .replace("{id}", context().getTransactionId());
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", context().getMerchantId())
                 .header("X-Public-Id", context().getPublicId())
                 .header("X-Secret", context().getSecret())
@@ -90,10 +86,6 @@ public class AuditSteps {
         String endpoint = "/api/v1/transactions/{id}/complete"
                 .replace("{id}", context().getTransactionId());
         SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                .header("X-Merchant-Id", context().getMerchantId())
-                .header("X-Public-Id", context().getPublicId())
                 .header("X-Secret", context().getSecret())
                 .contentType("application/json").body(body).when()
                 .patch(endpoint);
@@ -116,10 +108,6 @@ public class AuditSteps {
         String endpoint = "/api/v1/transactions/{id}/complete"
                 .replace("{id}", context().getTransactionId());
         SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                .header("X-Merchant-Id", context().getMerchantId())
-                .header("X-Public-Id", context().getPublicId())
                 .header("X-Secret", context().getSecret())
                 .contentType("application/json").body(body).when()
                 .patch(endpoint);
@@ -140,12 +128,6 @@ public class AuditSteps {
         String endpoint = "/api/v1/audit/transactions/{id}/integrity"
                 .replace("{id}", context().getTransactionId());
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                .header("X-Merchant-Id", context().getMerchantId())
-                .header("X-Public-Id", context().getPublicId())
-                .header("X-Secret", context().getSecret())
-                .when()
                 .get(endpoint);
         context().setLastResponse(resp);
     }
@@ -155,12 +137,6 @@ public class AuditSteps {
         String endpoint = "/api/v1/audit/transactions/{id}/events"
                 .replace("{id}", context().getTransactionId());
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                .header("X-Merchant-Id", context().getMerchantId())
-                .header("X-Public-Id", context().getPublicId())
-                .header("X-Secret", context().getSecret())
-                .when()
                 .get(endpoint);
         context().setLastResponse(resp);
     }
@@ -175,13 +151,8 @@ public class AuditSteps {
         String endpoint = "/api/v1/audit/transactions/{id}/events/evt_001"
                 .replace("{id}", context().getTransactionId());
         Response resp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
                 .header("X-Merchant-Id", context().getMerchantId())
                 .header("X-Public-Id", context().getPublicId())
-                .header("X-Secret", context().getSecret())
-                .contentType("application/json")
-                .body(body)
                 .when()
                 .put(endpoint);
         context().setLastResponse(resp);
@@ -211,8 +182,6 @@ public class AuditSteps {
         String txId = context().getTransactionId();
         if (txId != null) {
             Response auditResp = SerenityRest.given()
-                    .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                    .header(context().getCsrfHeaderName(), context().getCsrfToken())
                     .header("X-Merchant-Id", context().getMerchantId())
                     .header("X-Public-Id", context().getPublicId())
                     .header("X-Secret", context().getSecret())
@@ -236,8 +205,6 @@ public class AuditSteps {
         if (txId != null) {
             // Intentar eliminar un evento (debería fallar con 404, 405 o 403)
             Response deleteResp = SerenityRest.given()
-                    .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                    .header(context().getCsrfHeaderName(), context().getCsrfToken())
                     .header("X-Merchant-Id", context().getMerchantId())
                     .header("X-Public-Id", context().getPublicId())
                     .header("X-Secret", context().getSecret())
@@ -357,55 +324,6 @@ public class AuditSteps {
      * Es el mismo patrón usado en TransactionSteps y CredentialSteps.
      */
     private void asegurarCredenciales() {
-        if (context().getPublicId() != null && context().getSecret() != null) {
-            return;
-        }
-        // Obtener CSRF + login admin + crear comercio + generar credenciales
-        Response csrfResp = SerenityRest.given()
-                .when().get("/api/v1/security/csrf")
-                .then().statusCode(200).extract().response();
-        context().setCsrfToken(csrfResp.jsonPath().getString("token"));
-        context().setCsrfHeaderName(csrfResp.jsonPath().getString("headerName"));
-        context().setCsrfCookie(csrfResp.cookie("XSRF-TOKEN"));
-
-        Map<String, Object> login = new HashMap<>();
-        login.put("email", "admin@paycore.com");
-        login.put("password", "admin123");
-        Response loginResp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                .contentType("application/json").body(login).when()
-                .post("/api/v1/auth/login")
-                .then().statusCode(200).extract().response();
-        context().setAdminToken(loginResp.jsonPath().getString("token"));
-
-        if (context().getMerchantId() == null) {
-            Map<String, Object> merchant = new HashMap<>();
-            String ts = String.valueOf(context().getTimestamp());
-            merchant.put("businessName", "Comercio AUD " + ts);
-            merchant.put("businessId", "biz_aud_" + ts);
-            merchant.put("email", context().getUniqueEmail("aud"));
-            merchant.put("businessType", "RETAIL");
-            Response mResp = SerenityRest.given()
-                    .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                    .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                    .header("Authorization", "Bearer " + context().getAdminToken())
-                    .contentType("application/json").body(merchant).when()
-                    .post("/api/v1/admin/merchants")
-                    .then().statusCode(201).extract().response();
-            context().setMerchantId(mResp.jsonPath().getString("id"));
-        }
-
-        Map<String, Object> gen = new HashMap<>();
-        gen.put("merchantId", context().getMerchantId());
-        Response genResp = SerenityRest.given()
-                .cookie("XSRF-TOKEN", context().getCsrfCookie())
-                .header(context().getCsrfHeaderName(), context().getCsrfToken())
-                .header("Authorization", "Bearer " + context().getAdminToken())
-                .contentType("application/json").body(gen).when()
-                .post("/api/v1/admin/credentials/generate")
-                .then().statusCode(201).extract().response();
-        context().setPublicId(genResp.jsonPath().getString("publicId"));
-        context().setSecret(genResp.jsonPath().getString("secret"));
+        CommonSteps.asegurarCredenciales();
     }
 }

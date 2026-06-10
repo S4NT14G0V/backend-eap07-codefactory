@@ -32,7 +32,7 @@ public class CredentialApplicationService {
         Merchant merchant = commerceRepository.findById(merchantId)
                 .orElseThrow(() -> new RuntimeException("Comercio no encontrado"));
 
-        if (merchant.getStatus() != MerchantStatus.VERIFIED) {
+        if (merchant.getStatus() != MerchantStatus.ACTIVE && merchant.getStatus() != MerchantStatus.VERIFIED) {
             throw new IllegalStateException(
                 "No es posible generar credenciales hasta que el comercio esté activo y verificado");
         }
